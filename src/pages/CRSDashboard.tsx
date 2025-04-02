@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 // Self-contained UI components
@@ -108,7 +107,6 @@ const Table = ({ headers, data, onRowChange }: { headers: string[], data: any[],
   </div>
 );
 
-// Initial state for the CRS configuration
 const initialCRSConfig = {
   agePoints: [
     { age: 18, withSpouse: 90, withoutSpouse: 110 },
@@ -305,13 +303,12 @@ const initialCRSConfig = {
   }
 };
 
-// Main CRS Dashboard Component
 const CRSDashboard = () => {
   const [crsConfig, setCRSConfig] = useState(initialCRSConfig);
   const [activeTab, setActiveTab] = useState("Age");
   const [saveStatus, setSaveStatus] = useState("");
+  const [activeLanguageTestTab, setActiveLanguageTestTab] = useState("IELTS");
   
-  // Load config from localStorage on mount
   useEffect(() => {
     const savedConfig = localStorage.getItem('crsConfig');
     if (savedConfig) {
@@ -323,7 +320,6 @@ const CRSDashboard = () => {
     }
   }, []);
 
-  // Tabs for different categories
   const tabs = [
     "Age", 
     "Education", 
@@ -334,29 +330,59 @@ const CRSDashboard = () => {
     "Program Requirements"
   ];
 
-  // Generic handler for table row changes
+  const languageTestTabs = ["IELTS", "CELPIP", "TEF", "TCF"];
+
   const handleTableRowChange = (section: string, subsection: string | null = null) => {
     return (rowIndex: number, key: string, value: any) => {
       setCRSConfig(prev => {
         const newConfig = {...prev};
         if (subsection) {
-          newConfig[section][subsection][rowIndex][key] = value;
+          const subsectionParts = subsection.split('.');
+          let target = newConfig[section as keyof typeof newConfig];
+          
+          for (let i = 0; i < subsectionParts.length - 1; i++) {
+            target = target[subsectionParts[i] as keyof typeof target];
+          }
+          
+          target[subsectionParts[subsectionParts.length - 1]][rowIndex][key] = value;
         } else {
-          newConfig[section][rowIndex][key] = value;
+          newConfig[section as keyof typeof newConfig][rowIndex][key] = value;
         }
         return newConfig;
       });
     };
   };
 
-  // Save the configuration
+  const handleLanguageConversionChange = (testName: string, skillType: string, rowIndex: number, key: string, value: any) => {
+    setCRSConfig(prev => {
+      const newConfig = {...prev};
+      const conversionTable = newConfig.languagePoints.firstLanguage.clbConversion[testName as keyof typeof newConfig.languagePoints.firstLanguage.clbConversion];
+      
+      const skillTableIndex = conversionTable.findIndex(item => Object.keys(item)[0] === skillType);
+      if (skillTableIndex !== -1) {
+        const skillTable = conversionTable[skillTableIndex];
+        if (key === 'testScore') {
+          skillTable[skillType as keyof typeof skillTable][rowIndex] = value;
+        } else if (key === 'clbLevel') {
+          const clbArrayIndex = conversionTable.findIndex(item => 'clb' in item);
+          if (clbArrayIndex !== -1) {
+            conversionTable[clbArrayIndex].clb[rowIndex] = value;
+          }
+        }
+      }
+      
+      return newConfig;
+    });
+  };
+
+  const handleLanguageTestTabChange = (tab: string) => {
+    setActiveLanguageTestTab(tab);
+  };
+
   const handleSave = async () => {
     try {
-      // Save to localStorage
       localStorage.setItem('crsConfig', JSON.stringify(crsConfig));
       
-      // Simulate API call
-      // In a real app, you'd make an actual API request here
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSaveStatus("Configuration saved successfully");
@@ -368,14 +394,12 @@ const CRSDashboard = () => {
     }
   };
 
-  // Reset to default configuration
   const handleReset = () => {
     setCRSConfig(initialCRSConfig);
     setSaveStatus("Configuration reset to defaults");
     setTimeout(() => setSaveStatus(""), 3000);
   };
 
-  // Render the appropriate tab content
   const renderTabContent = () => {
     switch(activeTab) {
       case "Age":
@@ -411,9 +435,9 @@ const CRSDashboard = () => {
           <>
             <Card title="Language Tests to CLB Conversion">
               <Tabs 
-                tabs={["IELTS", "CELPIP", "TEF", "TCF"]} 
-                activeTab="IELTS" 
-                onTabChange={() => {}} // Not implemented - would show different test conversions
+                tabs={languageTestTabs} 
+                activeTab={activeLanguageTestTab} 
+                onTabChange={handleLanguageTestTabChange}
               />
               <div className="space-y-6">
                 {['speaking', 'listening', 'reading', 'writing'].map(skill => (
@@ -421,10 +445,15 @@ const CRSDashboard = () => {
                     <h4 className="font-medium text-gray-700 mb-2 capitalize">{skill}</h4>
                     <Table 
                       headers={["Test Score", "CLB Level"]}
-                      data={crsConfig.languagePoints.firstLanguage.clbConversion.IELTS.find(s => Object.keys(s)[0] === skill)[skill].map((score, i) => (
-                        { testScore: score, clbLevel: crsConfig.languagePoints.firstLanguage.clbConversion.IELTS[0].clb[i] }
-                      ))}
-                      onRowChange={() => {}} // Not implemented for this demo
+                      data={crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion]
+                        .find(s => Object.keys(s)[0] === skill)?.[skill as keyof object]?.map((score: any, i: number) => ({
+                          testScore: score, 
+                          clbLevel: crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion]
+                            .find(s => 'clb' in s)?.clb[i] || 0
+                        })) || []}
+                      onRowChange={(rowIndex, key, value) => 
+                        handleLanguageConversionChange(activeLanguageTestTab, skill, rowIndex, key, value)
+                      }
                     />
                   </div>
                 ))}
