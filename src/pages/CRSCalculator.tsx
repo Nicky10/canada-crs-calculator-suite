@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 // Self-contained UI components
@@ -808,4 +809,355 @@ const CRSCalculator = () => {
                 </div>
               </Card>
 
-              <Card title="First Official Language
+              <Card title="First Official Language">
+                <Select
+                  label="Language Test"
+                  value={profile.firstLanguage.test}
+                  onChange={(e) => handleLanguageChange('firstLanguage', 'test', e.target.value)}
+                  options={[
+                    { value: "IELTS", label: "IELTS - International English Language Testing System" },
+                    { value: "CELPIP", label: "CELPIP - Canadian English Language Proficiency Index Program" },
+                    { value: "TEF", label: "TEF - Test d'évaluation de français" },
+                    { value: "TCF", label: "TCF - Test de connaissance du français" }
+                  ]}
+                />
+
+                <LanguageTestInput
+                  languageTest={profile.firstLanguage.test}
+                  values={profile.firstLanguage}
+                  onChange={(skill, value) => handleLanguageChange('firstLanguage', skill, value)}
+                />
+
+                {clbLevels.firstLanguage && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                    <h4 className="font-medium text-blue-800 mb-2">CLB Equivalence</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">{clbLevels.firstLanguage.speaking}</div>
+                        <div className="text-xs text-gray-500">Speaking</div>
+                      </div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">{clbLevels.firstLanguage.listening}</div>
+                        <div className="text-xs text-gray-500">Listening</div>
+                      </div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">{clbLevels.firstLanguage.reading}</div>
+                        <div className="text-xs text-gray-500">Reading</div>
+                      </div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">{clbLevels.firstLanguage.writing}</div>
+                        <div className="text-xs text-gray-500">Writing</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              <Card title="Second Official Language (if applicable)">
+                <Select
+                  label="Language Test"
+                  value={profile.secondLanguage.test}
+                  onChange={(e) => handleLanguageChange('secondLanguage', 'test', e.target.value)}
+                  options={[
+                    { value: "IELTS", label: "IELTS - International English Language Testing System" },
+                    { value: "CELPIP", label: "CELPIP - Canadian English Language Proficiency Index Program" },
+                    { value: "TEF", label: "TEF - Test d'évaluation de français" },
+                    { value: "TCF", label: "TCF - Test de connaissance du français" }
+                  ]}
+                />
+
+                <LanguageTestInput
+                  languageTest={profile.secondLanguage.test}
+                  values={profile.secondLanguage}
+                  onChange={(skill, value) => handleLanguageChange('secondLanguage', skill, value)}
+                />
+
+                {clbLevels.secondLanguage && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                    <h4 className="font-medium text-blue-800 mb-2">CLB Equivalence</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">{clbLevels.secondLanguage.speaking}</div>
+                        <div className="text-xs text-gray-500">Speaking</div>
+                      </div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">{clbLevels.secondLanguage.listening}</div>
+                        <div className="text-xs text-gray-500">Listening</div>
+                      </div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">{clbLevels.secondLanguage.reading}</div>
+                        <div className="text-xs text-gray-500">Reading</div>
+                      </div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">{clbLevels.secondLanguage.writing}</div>
+                        <div className="text-xs text-gray-500">Writing</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              <Card title="Work Experience">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input
+                    label="Canadian Work Experience (years)"
+                    type="number"
+                    min={0}
+                    max={5}
+                    step={1}
+                    value={profile.canadianWorkExperience}
+                    onChange={(e) => handleChange('canadianWorkExperience', parseFloat(e.target.value) || 0)}
+                  />
+                  
+                  <Input
+                    label="Foreign Work Experience (years)"
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={1}
+                    value={profile.foreignWorkExperience}
+                    onChange={(e) => handleChange('foreignWorkExperience', parseFloat(e.target.value) || 0)}
+                  />
+
+                  <Select
+                    label="NOC Category"
+                    value={profile.nocCategory}
+                    onChange={(e) => handleChange('nocCategory', e.target.value)}
+                    options={[
+                      { value: "0", label: "NOC Skill Level 0 - Management" },
+                      { value: "A", label: "NOC Skill Level A - Professional" },
+                      { value: "B", label: "NOC Skill Level B - Technical/Trades" },
+                      { value: "C", label: "NOC Skill Level C - Intermediate" },
+                      { value: "D", label: "NOC Skill Level D - Labour" }
+                    ]}
+                  />
+                </div>
+              </Card>
+
+              {profile.maritalStatus === 'married' && (
+                <Card title="Spouse Factors">
+                  <Select
+                    label="Spouse Education"
+                    value={profile.spouseEducation}
+                    onChange={(e) => handleChange('spouseEducation', e.target.value)}
+                    options={[
+                      { value: "less_than_secondary", label: "Less than Secondary/High School" },
+                      { value: "secondary", label: "Secondary/High School Diploma" },
+                      { value: "one_year_post_secondary", label: "One-year Post-secondary Program" },
+                      { value: "two_year_post_secondary", label: "Two-year Post-secondary Program" },
+                      { value: "bachelors", label: "Bachelor's Degree" },
+                      { value: "two_or_more_degrees", label: "Two or more Post-secondary Credentials" },
+                      { value: "masters", label: "Master's Degree" },
+                      { value: "doctoral", label: "Doctoral Degree (PhD)" }
+                    ]}
+                  />
+
+                  <div className="mt-4">
+                    <h4 className="font-medium mb-2">Spouse Language</h4>
+                    <Select
+                      label="Language Test"
+                      value={profile.spouseLanguage.test}
+                      onChange={(e) => handleLanguageChange('spouseLanguage', 'test', e.target.value)}
+                      options={[
+                        { value: "IELTS", label: "IELTS - International English Language Testing System" },
+                        { value: "CELPIP", label: "CELPIP - Canadian English Language Proficiency Index Program" },
+                        { value: "TEF", label: "TEF - Test d'évaluation de français" },
+                        { value: "TCF", label: "TCF - Test de connaissance du français" }
+                      ]}
+                    />
+
+                    <LanguageTestInput
+                      languageTest={profile.spouseLanguage.test}
+                      values={profile.spouseLanguage}
+                      onChange={(skill, value) => handleLanguageChange('spouseLanguage', skill, value)}
+                    />
+                  </div>
+
+                  <Input
+                    label="Spouse Canadian Work Experience (years)"
+                    type="number"
+                    min={0}
+                    max={5}
+                    step={1}
+                    value={profile.spouseWorkExperience}
+                    onChange={(e) => handleChange('spouseWorkExperience', parseFloat(e.target.value) || 0)}
+                  />
+                </Card>
+              )}
+
+              <Card title="Additional Points">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Checkbox
+                      label="Provincial Nomination"
+                      checked={profile.provincialNomination}
+                      onChange={(e) => handleChange('provincialNomination', e.target.checked)}
+                    />
+                    
+                    <Checkbox
+                      label="Sibling in Canada (citizen or PR)"
+                      checked={profile.canadianSibling}
+                      onChange={(e) => handleChange('canadianSibling', e.target.checked)}
+                    />
+                    
+                    <Checkbox
+                      label="French Only (NCLC 7+ in all skills)"
+                      checked={profile.frenchOnly}
+                      onChange={(e) => {
+                        if (e.target.checked && profile.frenchAndEnglish) {
+                          handleChange('frenchAndEnglish', false);
+                        }
+                        handleChange('frenchOnly', e.target.checked);
+                      }}
+                    />
+                    
+                    <Checkbox
+                      label="French (NCLC 7+) and English (CLB 4+)"
+                      checked={profile.frenchAndEnglish}
+                      onChange={(e) => {
+                        if (e.target.checked && profile.frenchOnly) {
+                          handleChange('frenchOnly', false);
+                        }
+                        handleChange('frenchAndEnglish', e.target.checked);
+                      }}
+                    />
+                    
+                    <Checkbox
+                      label="Certification in a trade occupation"
+                      checked={profile.tradesCertification}
+                      onChange={(e) => handleChange('tradesCertification', e.target.checked)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Select
+                      label="Arranged Employment"
+                      value={profile.jobOffer}
+                      onChange={(e) => handleChange('jobOffer', e.target.value)}
+                      options={[
+                        { value: "none", label: "None" },
+                        { value: "noc_00", label: "NOC 00 - Senior Management" },
+                        { value: "noc_0_A_B", label: "NOC 0, A, or B" },
+                        { value: "other", label: "Other NOC" }
+                      ]}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              <div className="flex justify-between mt-6">
+                <Button type="button" onClick={resetForm} className="bg-gray-600">
+                  Reset Form
+                </Button>
+                <Button type="submit">
+                  Calculate CRS Score
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div>
+              <div className="bg-blue-100 border border-blue-400 text-blue-800 px-4 py-3 rounded-md mb-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-lg font-semibold mb-2">Your CRS Score</h2>
+                    <p className="text-3xl font-bold">{results.totalCRSScore}</p>
+                  </div>
+                  <Button onClick={() => setResults(null)} className="bg-blue-700">
+                    Recalculate
+                  </Button>
+                </div>
+              </div>
+              
+              <Card title="Score Breakdown">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-100 p-4 rounded-md">
+                    <p className="font-medium">Core/Human Capital: <span className="float-right">{results.coreHumanCapitalPoints}</span></p>
+                    <div className="mt-2 text-sm text-gray-600">
+                      <p>Age: <span className="float-right">{results.detailedBreakdown.age}</span></p>
+                      <p>Education: <span className="float-right">{results.detailedBreakdown.education}</span></p>
+                      <p>First Language: <span className="float-right">{results.detailedBreakdown.firstLanguage}</span></p>
+                      <p>Canadian Experience: <span className="float-right">{results.detailedBreakdown.canadianExperience}</span></p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-100 p-4 rounded-md">
+                    <p className="font-medium">Spouse Factors: <span className="float-right">{results.spousePoints}</span></p>
+                    {profile.maritalStatus === 'married' && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <p>Education: <span className="float-right">{results.detailedBreakdown.spouseEducation}</span></p>
+                        <p>Language: <span className="float-right">{results.detailedBreakdown.spouseLanguage}</span></p>
+                        <p>Experience: <span className="float-right">{results.detailedBreakdown.spouseExperience}</span></p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="bg-gray-100 p-4 rounded-md">
+                    <p className="font-medium">Skill Transferability: <span className="float-right">{results.skillTransferabilityPoints}</span></p>
+                  </div>
+                  
+                  <div className="bg-gray-100 p-4 rounded-md">
+                    <p className="font-medium">Additional Points: <span className="float-right">{results.additionalPoints}</span></p>
+                  </div>
+                </div>
+              </Card>
+              
+              <Card title="Program Eligibility">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className={`p-4 rounded-md ${results.eligibilityStatus.FSW ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <h3 className="font-medium mb-2">Federal Skilled Worker</h3>
+                    <p>{results.eligibilityStatus.FSW ? 'Eligible' : 'Not Eligible'}</p>
+                  </div>
+                  
+                  <div className={`p-4 rounded-md ${results.eligibilityStatus.CEC ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <h3 className="font-medium mb-2">Canadian Experience Class</h3>
+                    <p>{results.eligibilityStatus.CEC ? 'Eligible' : 'Not Eligible'}</p>
+                  </div>
+                  
+                  <div className={`p-4 rounded-md ${results.eligibilityStatus.FST ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <h3 className="font-medium mb-2">Federal Skilled Trades</h3>
+                    <p>{results.eligibilityStatus.FST ? 'Eligible' : 'Not Eligible'}</p>
+                  </div>
+                </div>
+              </Card>
+              
+              <Card title="Comparison to Recent Draw Scores">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required Score</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Score</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difference</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {Object.entries(results.scoreComparison).map(([program, difference]) => (
+                        <tr key={program}>
+                          <td className="px-6 py-4 whitespace-nowrap">{program}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{(crsConfig?.cutOffScores as any)[program]}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{results.totalCRSScore}</td>
+                          <td className={`px-6 py-4 whitespace-nowrap font-medium ${Number(difference) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {Number(difference) >= 0 ? `+${difference}` : difference}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+              
+              <div className="mt-6">
+                <Button onClick={() => setResults(null)} className="bg-blue-700 w-full md:w-auto">
+                  Adjust Profile & Recalculate
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CRSCalculator;
