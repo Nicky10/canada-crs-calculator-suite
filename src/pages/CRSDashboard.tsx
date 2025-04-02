@@ -440,23 +440,32 @@ const CRSDashboard = () => {
                 onTabChange={handleLanguageTestTabChange}
               />
               <div className="space-y-6">
-                {['speaking', 'listening', 'reading', 'writing'].map(skill => (
-                  <div key={skill}>
-                    <h4 className="font-medium text-gray-700 mb-2 capitalize">{skill}</h4>
-                    <Table 
-                      headers={["Test Score", "CLB Level"]}
-                      data={crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion]
-                        .find(s => Object.keys(s)[0] === skill)?.[skill as keyof object]?.map((score: any, i: number) => ({
-                          testScore: score, 
-                          clbLevel: crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion]
-                            .find(s => 'clb' in s)?.clb[i] || 0
-                        })) || []}
-                      onRowChange={(rowIndex, key, value) => 
-                        handleLanguageConversionChange(activeLanguageTestTab, skill, rowIndex, key, value)
-                      }
-                    />
-                  </div>
-                ))}
+                {['speaking', 'listening', 'reading', 'writing'].map(skill => {
+                  const skillData = crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion]
+                    .find(s => Object.keys(s)[0] === skill);
+                  
+                  const clbData = crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion]
+                    .find(s => 'clb' in s);
+                    
+                  const tableData = skillData && clbData ? 
+                    (skillData[skill as keyof typeof skillData] || []).map((score: any, i: number) => ({
+                      testScore: score, 
+                      clbLevel: clbData.clb[i] || 0
+                    })) : [];
+                    
+                  return (
+                    <div key={skill}>
+                      <h4 className="font-medium text-gray-700 mb-2 capitalize">{skill}</h4>
+                      <Table 
+                        headers={["Test Score", "CLB Level"]}
+                        data={tableData}
+                        onRowChange={(rowIndex, key, value) => 
+                          handleLanguageConversionChange(activeLanguageTestTab, skill, rowIndex, key, value)
+                        }
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </Card>
             

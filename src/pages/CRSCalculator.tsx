@@ -81,7 +81,7 @@ const LanguageTestInput = ({ languageTest, values, onChange }: {
       type="number"
       step="0.5"
       min={0}
-      value={values.speaking}
+      value={values.speaking.toString()}
       onChange={(e) => onChange("speaking", parseFloat(e.target.value) || 0)}
     />
     <Input
@@ -89,7 +89,7 @@ const LanguageTestInput = ({ languageTest, values, onChange }: {
       type="number"
       step="0.5"
       min={0}
-      value={values.listening}
+      value={values.listening.toString()}
       onChange={(e) => onChange("listening", parseFloat(e.target.value) || 0)}
     />
     <Input
@@ -97,7 +97,7 @@ const LanguageTestInput = ({ languageTest, values, onChange }: {
       type="number"
       step="0.5"
       min={0}
-      value={values.reading}
+      value={values.reading.toString()}
       onChange={(e) => onChange("reading", parseFloat(e.target.value) || 0)}
     />
     <Input
@@ -105,7 +105,7 @@ const LanguageTestInput = ({ languageTest, values, onChange }: {
       type="number"
       step="0.5"
       min={0}
-      value={values.writing}
+      value={values.writing.toString()}
       onChange={(e) => onChange("writing", parseFloat(e.target.value) || 0)}
     />
   </div>
