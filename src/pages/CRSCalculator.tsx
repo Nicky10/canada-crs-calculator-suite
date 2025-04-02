@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 // Self-contained UI components
@@ -198,7 +197,6 @@ interface CRSConfig {
   };
 }
 
-// Define proper typing for CLB levels
 interface CLBLevels {
   speaking: number;
   listening: number;
@@ -245,7 +243,6 @@ interface UserProfile {
   nocCategory: string;
 }
 
-// Initial empty profile
 const initialProfile: UserProfile = {
   age: 30,
   maritalStatus: "single",
@@ -285,7 +282,6 @@ const initialProfile: UserProfile = {
   nocCategory: "0"
 };
 
-// Main calculator component
 const CRSCalculator = () => {
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [crsConfig, setCRSConfig] = useState<CRSConfig | null>(null);
@@ -335,13 +331,11 @@ const CRSCalculator = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load CRS configuration from localStorage on mount
   useEffect(() => {
     const loadConfig = async () => {
       try {
         setLoading(true);
 
-        // Try to get from localStorage first
         const savedConfig = localStorage.getItem('crsConfig');
         if (savedConfig) {
           const parsedConfig = JSON.parse(savedConfig);
@@ -350,8 +344,6 @@ const CRSCalculator = () => {
           return;
         }
 
-        // Fallback: Mock API call if localStorage is empty
-        // In a real app, you'd make an actual API request here
         await new Promise(resolve => setTimeout(resolve, 500));
         throw new Error("No CRS configuration found. Please set up the CRS Dashboard first.");
       } catch (e) {
@@ -367,7 +359,6 @@ const CRSCalculator = () => {
     loadConfig();
   }, []);
 
-  // Calculate CLB levels whenever language scores change
   useEffect(() => {
     if (!crsConfig) return;
 
@@ -380,7 +371,6 @@ const CRSCalculator = () => {
                       (language === 'firstLanguage' ? profile.firstLanguage.test : profile.secondLanguage.test);
       const result: CLBLevels = { speaking: 0, listening: 0, reading: 0, writing: 0 };
       
-      // Find the correct test conversion table
       let conversionTable: any[] = [];
       if (testType === 'IELTS') {
         conversionTable = crsConfig.languagePoints.firstLanguage.clbConversion.IELTS;
@@ -394,7 +384,6 @@ const CRSCalculator = () => {
         return result;
       }
 
-      // For each skill, find the CLB level based on the test score
       Object.keys(scores).forEach(skill => {
         const skillKey = skill as keyof typeof scores;
         if (!scores[skillKey]) return;
@@ -406,7 +395,6 @@ const CRSCalculator = () => {
         const clbArrayObj = conversionTable.find(t => t && typeof t === 'object' && 'clb' in t);
         const clbArray = clbArrayObj ? clbArrayObj.clb : [];
         
-        // Find the highest CLB level where the test score meets or exceeds the requirement
         for (let i = scoreArray.length - 1; i >= 0; i--) {
           if (scores[skillKey] >= scoreArray[i]) {
             result[skillKey as keyof CLBLevels] = clbArray[i] || 0;
@@ -418,7 +406,6 @@ const CRSCalculator = () => {
       return result;
     };
 
-    // Calculate CLB levels for all languages
     setClbLevels({
       firstLanguage: calculateCLB('firstLanguage', profile.firstLanguage.test, profile.firstLanguage),
       secondLanguage: calculateCLB('secondLanguage', profile.secondLanguage.test, profile.secondLanguage),
@@ -426,7 +413,6 @@ const CRSCalculator = () => {
     });
   }, [profile.firstLanguage, profile.secondLanguage, profile.spouseLanguage, crsConfig]);
 
-  // Handle form input changes
   const handleChange = (field: string, value: any) => {
     setProfile(prev => ({
       ...prev,
@@ -434,11 +420,9 @@ const CRSCalculator = () => {
     }));
   };
 
-  // Handle nested language field changes
-  const handleLanguageChange = (languageField: string, skill: string, value: any) => {
+  const handleLanguageChange = (languageField: string, skill: string, value: number) => {
     setProfile(prev => {
       const updatedProfile = { ...prev };
-      // Type assertion to access dynamic properties
       const languageObj = updatedProfile[languageField as keyof UserProfile];
       if (languageObj && typeof languageObj === 'object') {
         (languageObj as any)[skill] = value;
@@ -447,7 +431,6 @@ const CRSCalculator = () => {
     });
   };
 
-  // Handle form submission and calculate CRS score
   const calculateCRS = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -457,12 +440,9 @@ const CRSCalculator = () => {
     }
 
     try {
-      // A. Core/Human Capital Factors
       let coreHumanCapitalPoints = 0;
       
-      // 1. Age points
       const withSpouse = profile.maritalStatus === 'married';
-      // Find the closest age bracket
       const agePoints = interpolatePoints(
         crsConfig.agePoints, 
         'age', 
@@ -470,10 +450,8 @@ const CRSCalculator = () => {
         withSpouse ? 'withSpouse' : 'withoutSpouse'
       );
       
-      // 2. Education points
       const educationPoints = crsConfig.educationPoints.find(e => e.level === profile.education);
       
-      // 3. Language points
       let firstLanguagePoints = 0;
       const firstLangCLB = clbLevels.firstLanguage;
       
@@ -481,17 +459,15 @@ const CRSCalculator = () => {
         const skill = point.skill;
         const clbLevel = firstLangCLB[skill as keyof CLBLevels];
         if (clbLevel >= 4) {
-          // Find the correct points for this CLB level
           const clbKey = `clb${clbLevel}`;
           firstLanguagePoints += point[clbKey] || 0;
         }
       });
       
-      // 4. Canadian work experience
       const canadianExpPoints = interpolatePoints(
         crsConfig.workExperiencePoints.canadian,
         'years',
-        Math.min(profile.canadianWorkExperience, 5), // Cap at 5 years
+        Math.min(profile.canadianWorkExperience, 5),
         withSpouse ? 'withSpouse' : 'withoutSpouse'
       );
       
@@ -500,16 +476,13 @@ const CRSCalculator = () => {
         firstLanguagePoints + 
         canadianExpPoints;
       
-      // B. Spouse Factors (if applicable)
       let spousePoints = 0;
-      let spouseLangPoints = 0; // Define this variable for later use
+      let spouseLangPoints = 0;
       
       if (withSpouse) {
-        // 1. Spouse education
         const spouseEduPoints = crsConfig.educationPoints.find(e => e.level === profile.spouseEducation);
         
-        // 2. Spouse language
-        spouseLangPoints = 0; // Reset before calculating
+        spouseLangPoints = 0;
         const spouseLangCLB = clbLevels.spouseLanguage;
         crsConfig.languagePoints.firstLanguage.spousePoints.forEach(point => {
           const skill = point.skill;
@@ -520,9 +493,8 @@ const CRSCalculator = () => {
           }
         });
         
-        // 3. Spouse work experience
         const spouseExpEntry = crsConfig.workExperiencePoints.spouseExperience.find(
-          e => e.years === Math.min(profile.spouseWorkExperience, 5) // Cap at 5 years
+          e => e.years === Math.min(profile.spouseWorkExperience, 5)
         );
         
         spousePoints = (spouseEduPoints ? (spouseEduPoints.withSpouse || 0) : 0) + 
@@ -530,14 +502,11 @@ const CRSCalculator = () => {
                         (spouseExpEntry ? spouseExpEntry.points : 0);
       }
       
-      // C. Skill Transferability Factors
       let skillTransferabilityPoints = 0;
       
-      // Check if all first language CLB scores meet minimum threshold
       const meetsCLB7 = Object.values(firstLangCLB).every(clb => clb >= 7);
       const meetsCLB9 = Object.values(firstLangCLB).every(clb => clb >= 9);
       
-      // 1. Education + Language
       if (profile.education !== 'less_than_secondary') {
         const eduTransferTable = meetsCLB9 ? 
           crsConfig.transferabilityPoints.education.clb9 : 
@@ -549,14 +518,13 @@ const CRSCalculator = () => {
         }
       }
       
-      // 2. Foreign Work Experience + Language
       if (profile.foreignWorkExperience > 0) {
         const fweCLBTable = meetsCLB9 ? 
           crsConfig.transferabilityPoints.foreignWorkExperience.clb9 : 
           crsConfig.transferabilityPoints.foreignWorkExperience.clb7;
           
         const fwePoints = fweCLBTable.find(
-          e => e.years === Math.min(profile.foreignWorkExperience, 3) // Cap at 3 years
+          e => e.years === Math.min(profile.foreignWorkExperience, 3)
         );
         
         if (fwePoints && meetsCLB7) {
@@ -564,7 +532,6 @@ const CRSCalculator = () => {
         }
       }
       
-      // 3. Canadian Work Experience + Foreign Work Experience
       if (profile.canadianWorkExperience > 0 && profile.foreignWorkExperience > 0) {
         const combinedExpEntry = crsConfig.transferabilityPoints.canadianWorkExperience.foreignExperience.find(
           e => e.canadianYears === Math.min(profile.canadianWorkExperience, 2) && 
@@ -576,7 +543,6 @@ const CRSCalculator = () => {
         }
       }
       
-      // 4. Canadian Work Experience + Education
       if (profile.canadianWorkExperience > 0 && profile.education !== 'less_than_secondary') {
         const eduExpCombination = crsConfig.transferabilityPoints.canadianWorkExperience.educationCombination.find(
           e => e.canadianYears === Math.min(profile.canadianWorkExperience, 1) && 
@@ -588,13 +554,10 @@ const CRSCalculator = () => {
         }
       }
       
-      // Cap transferability points at 100
       skillTransferabilityPoints = Math.min(skillTransferabilityPoints, 100);
       
-      // D. Additional Points
       let additionalPoints = 0;
       
-      // 1. Canadian Education
       if (profile.canadianEducation !== 'none') {
         const canadianEduPoints = crsConfig.additionalPoints.canadianEducation.find(
           e => e.level === profile.canadianEducation
@@ -605,39 +568,32 @@ const CRSCalculator = () => {
         }
       }
       
-      // 2. Provincial Nomination
       if (profile.provincialNomination) {
         additionalPoints += crsConfig.additionalPoints.provincialNomination;
       }
       
-      // 3. Job Offer
       if (profile.jobOffer === 'noc_00') {
         additionalPoints += crsConfig.additionalPoints.arrangedEmployment.noc_00;
       } else if (profile.jobOffer === 'noc_0_A_B') {
         additionalPoints += crsConfig.additionalPoints.arrangedEmployment.noc_0_A_B;
       }
       
-      // 4. Canadian Sibling
       if (profile.canadianSibling) {
         additionalPoints += crsConfig.additionalPoints.canadianSibling;
       }
       
-      // 5. French Language
       if (profile.frenchOnly) {
         additionalPoints += crsConfig.additionalPoints.frenchLanguage.nclc7;
       } else if (profile.frenchAndEnglish) {
         additionalPoints += crsConfig.additionalPoints.frenchLanguage.nclc7_english_clb4;
       }
       
-      // 6. Trades Certification
       if (profile.tradesCertification) {
         additionalPoints += crsConfig.additionalPoints.tradesCertification;
       }
       
-      // Calculate total CRS score
       const totalCRSScore = coreHumanCapitalPoints + spousePoints + skillTransferabilityPoints + additionalPoints;
       
-      // Check eligibility for various programs
       let eligibilityStatus = {
         FSW: false,
         CEC: false,
@@ -645,14 +601,12 @@ const CRSCalculator = () => {
         generalEligible: true
       };
       
-      // FSW Eligibility
       const allFirstLangCLB = Object.values(firstLangCLB).every(clb => clb >= crsConfig.programMinimums.FSW.minLanguagePoints);
       const meetsEduReq = profile.education !== 'less_than_secondary';
       const meetsForeignExpReq = profile.foreignWorkExperience >= crsConfig.programMinimums.FSW.minExperience;
       
       eligibilityStatus.FSW = allFirstLangCLB && meetsEduReq && meetsForeignExpReq && totalCRSScore >= crsConfig.programMinimums.FSW.minPoints;
       
-      // CEC Eligibility
       const minCLBForNOC = profile.nocCategory === '0' || profile.nocCategory === 'A' 
         ? crsConfig.programMinimums.CEC.minLanguagePoints.NOC_0_A 
         : crsConfig.programMinimums.CEC.minLanguagePoints.NOC_B;
@@ -662,7 +616,6 @@ const CRSCalculator = () => {
       
       eligibilityStatus.CEC = meetsCECLangReq && meetsCECExpReq;
       
-      // FST Eligibility
       const meetsFSTSpeakingReq = firstLangCLB.speaking >= crsConfig.programMinimums.FST.minLanguagePoints.speaking;
       const meetsFSTListeningReq = firstLangCLB.listening >= crsConfig.programMinimums.FST.minLanguagePoints.listening;
       const meetsFSTReadingReq = firstLangCLB.reading >= crsConfig.programMinimums.FST.minLanguagePoints.reading;
@@ -672,7 +625,6 @@ const CRSCalculator = () => {
       eligibilityStatus.FST = meetsFSTSpeakingReq && meetsFSTListeningReq && 
                               meetsFSTReadingReq && meetsFSTWritingReq && meetsFSTExpReq;
       
-      // Compare scores to cut-offs
       const scoreComparison = {
         FSW: totalCRSScore - crsConfig.cutOffScores.FSW,
         CEC: totalCRSScore - crsConfig.cutOffScores.CEC,
@@ -681,7 +633,6 @@ const CRSCalculator = () => {
         generalDraw: totalCRSScore - crsConfig.cutOffScores.generalDraw
       };
       
-      // Set the results
       setResults({
         coreHumanCapitalPoints,
         spousePoints,
@@ -703,39 +654,31 @@ const CRSCalculator = () => {
         eligibilityStatus,
         scoreComparison
       });
-      
     } catch (e) {
       console.error("Error calculating CRS score:", e);
       setError("An error occurred while calculating your CRS score. Please try again.");
     }
   };
 
-  // Helper function to interpolate points for age or experience
   const interpolatePoints = (pointsTable: any[], keyField: string, value: number, pointsField: string): number => {
-    // Sort the table by the key field
     const sortedTable = [...pointsTable].sort((a, b) => a[keyField] - b[keyField]);
     
-    // If value is less than the lowest key, return the lowest key's points
     if (value <= sortedTable[0][keyField]) {
       return sortedTable[0][pointsField];
     }
     
-    // If value is greater than the highest key, return the highest key's points
     if (value >= sortedTable[sortedTable.length - 1][keyField]) {
       return sortedTable[sortedTable.length - 1][pointsField];
     }
     
-    // Find the two neighboring keys
     for (let i = 0; i < sortedTable.length - 1; i++) {
       const lowerKey = sortedTable[i][keyField];
       const upperKey = sortedTable[i + 1][keyField];
       
       if (value >= lowerKey && value <= upperKey) {
-        // If value is exactly one of the keys, return that key's points
         if (value === lowerKey) return sortedTable[i][pointsField];
         if (value === upperKey) return sortedTable[i + 1][pointsField];
         
-        // Interpolate between the two keys
         const ratio = (value - lowerKey) / (upperKey - lowerKey);
         return Math.round(
           sortedTable[i][pointsField] + 
@@ -744,11 +687,9 @@ const CRSCalculator = () => {
       }
     }
     
-    // Fallback (should not reach here)
     return 0;
   };
 
-  // Reset the calculator form
   const resetForm = () => {
     setProfile(initialProfile);
     setResults(null);
