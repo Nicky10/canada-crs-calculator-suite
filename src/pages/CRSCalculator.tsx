@@ -74,7 +74,7 @@ const LanguageTestInput = ({ languageTest, values, onChange }: {
     writing: number,
     [key: string]: any
   }, 
-  onChange: (skill: string, value: any) => void 
+  onChange: (skill: string, value: number) => void 
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     <Input
@@ -119,10 +119,10 @@ interface CRSConfig {
   languagePoints: {
     firstLanguage: {
       clbConversion: {
-        IELTS: any[];
-        CELPIP: any[];
-        TEF: any[];
-        TCF: any[];
+        IELTS: { [key: string]: any }[];
+        CELPIP: { [key: string]: any }[];
+        TEF: { [key: string]: any }[];
+        TCF: { [key: string]: any }[];
       },
       points: { skill: string, [key: string]: any }[];
       spousePoints: { skill: string, [key: string]: any }[];
@@ -289,7 +289,40 @@ const initialProfile: UserProfile = {
 const CRSCalculator = () => {
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [crsConfig, setCRSConfig] = useState<CRSConfig | null>(null);
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<{
+    coreHumanCapitalPoints: number;
+    spousePoints: number;
+    skillTransferabilityPoints: number;
+    additionalPoints: number;
+    totalCRSScore: number;
+    detailedBreakdown: {
+      age: number;
+      education: number;
+      firstLanguage: number;
+      canadianExperience: number;
+      spouseEducation: number;
+      spouseLanguage: number;
+      spouseExperience: number;
+    };
+    clbLevels: {
+      firstLanguage: CLBLevels;
+      secondLanguage: CLBLevels;
+      spouseLanguage: CLBLevels;
+    };
+    eligibilityStatus: {
+      FSW: boolean;
+      CEC: boolean;
+      FST: boolean;
+      generalEligible: boolean;
+    };
+    scoreComparison: {
+      FSW: number;
+      CEC: number;
+      FST: number;
+      PNP: number;
+      generalDraw: number;
+    };
+  } | null>(null);
   const [clbLevels, setClbLevels] = useState<{
     firstLanguage: CLBLevels,
     secondLanguage: CLBLevels,
@@ -348,7 +381,7 @@ const CRSCalculator = () => {
       const result: CLBLevels = { speaking: 0, listening: 0, reading: 0, writing: 0 };
       
       // Find the correct test conversion table
-      let conversionTable;
+      let conversionTable: any[] = [];
       if (testType === 'IELTS') {
         conversionTable = crsConfig.languagePoints.firstLanguage.clbConversion.IELTS;
       } else if (testType === 'CELPIP') {
@@ -363,19 +396,20 @@ const CRSCalculator = () => {
 
       // For each skill, find the CLB level based on the test score
       Object.keys(scores).forEach(skill => {
-        if (!scores[skill as keyof typeof scores]) return;
+        const skillKey = skill as keyof typeof scores;
+        if (!scores[skillKey]) return;
         
-        const skillTable = conversionTable.find(t => Object.keys(t)[0] === skill);
+        const skillTable = conversionTable.find(t => t && typeof t === 'object' && Object.keys(t)[0] === skill);
         if (!skillTable) return;
         
         const scoreArray = skillTable[skill as keyof typeof skillTable];
-        const clbArrayObj = conversionTable.find(t => 'clb' in t);
+        const clbArrayObj = conversionTable.find(t => t && typeof t === 'object' && 'clb' in t);
         const clbArray = clbArrayObj ? clbArrayObj.clb : [];
         
         // Find the highest CLB level where the test score meets or exceeds the requirement
         for (let i = scoreArray.length - 1; i >= 0; i--) {
-          if (scores[skill as keyof typeof scores] >= scoreArray[i]) {
-            result[skill as keyof CLBLevels] = clbArray[i] || 0;
+          if (scores[skillKey] >= scoreArray[i]) {
+            result[skillKey as keyof CLBLevels] = clbArray[i] || 0;
             break;
           }
         }
@@ -402,13 +436,15 @@ const CRSCalculator = () => {
 
   // Handle nested language field changes
   const handleLanguageChange = (languageField: string, skill: string, value: any) => {
-    setProfile(prev => ({
-      ...prev,
-      [languageField]: {
-        ...prev[languageField as keyof UserProfile],
-        [skill]: value
+    setProfile(prev => {
+      const updatedProfile = { ...prev };
+      // Type assertion to access dynamic properties
+      const languageObj = updatedProfile[languageField as keyof UserProfile];
+      if (languageObj && typeof languageObj === 'object') {
+        (languageObj as any)[skill] = value;
       }
-    }));
+      return updatedProfile;
+    });
   };
 
   // Handle form submission and calculate CRS score
