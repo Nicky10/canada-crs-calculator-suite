@@ -413,6 +413,7 @@ const getAdaptabilityPoints = (profile: any): number => {
 const CRSCalculator = () => {
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [crsConfig, setCRSConfig] = useState<CRSConfig | null>(null);
+  const topRef = React.useRef<HTMLDivElement>(null);
 
   // Función para calcular el total de puntos y verificar la elegibilidad
 const checkFSWEligibility = () => {
@@ -878,6 +879,7 @@ const checkFSWEligibility = () => {
   // Handle form submission and calculate CRS score
   const calculateCRS = (e: React.FormEvent) => {
     e.preventDefault();
+    scrollToTop();
     
     if (!crsConfig) {
       setError("CRS configuration is not loaded. Please set up the CRS Dashboard first.");
@@ -1324,9 +1326,15 @@ const checkFSWEligibility = () => {
     );
   }
 
+  const scrollToTop = () => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+
   return (
     <div className='bg-gray-50 min-h-screen p-6'>
       <div className='max-w-4xl mx-auto'>
+      <div ref={topRef}></div>
         <div className='bg-white shadow-md rounded-lg p-6 mb-6 pb-40'>
         <div className='flex justify-between items-start mb-4'>
           {/* Título y descripción */}
@@ -1697,7 +1705,7 @@ const checkFSWEligibility = () => {
                     <h2 className='text-lg font-semibold mb-2'>Tu Puntaje CRS Es:</h2>
                     <p className='text-3xl font-bold'>{results.totalCRSScore}</p>
                   </div>
-                  <Button onClick={() => setResults(null)} className='px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors'>
+                  <Button onClick={() => { setResults(null); scrollToTop(); }} className='px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors'>
                     Calcular de Nuevo
                   </Button>
                 </div>
@@ -2203,7 +2211,7 @@ const checkFSWEligibility = () => {
               </Card>
 
               <div className='mt-6'>
-                <Button onClick={() => setResults(null)} className='px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors'>
+                <Button onClick={() => { setResults(null); scrollToTop(); }} className='px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors'>
                   Ajustar Perfil y Recalcular
                 </Button>
               </div>

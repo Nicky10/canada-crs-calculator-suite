@@ -2,7 +2,7 @@
   "name": "vite_react_shadcn_ts",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://Nicky10.github.io/canada-crs-calculator-suite/",
+  "homepage": "https://nicky10.github.io/canada-crs-calculator-suite/",
   "type": "module",
   "scripts": {
     "dev": "vite",
