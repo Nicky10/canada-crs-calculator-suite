@@ -1,15 +1,43 @@
 import React, { useState, useEffect } from 'react';
+import { get } from 'lodash';
+
+type LegacyCLBEntry = {
+  [key: string]: number[];
+  clb: number[];
+};
+
+type NewCLBEntry = {
+  skill: 'speaking' | 'listening' | 'reading' | 'writing';
+  values: number[];
+  clb: number[];
+};
+
+function isNewCLBEntry(entry: any): entry is NewCLBEntry {
+  return 'skill' in entry && 'values' in entry && Array.isArray(entry.clb);
+}
+
 
 // Self-contained UI components
-const Button = ({ children, onClick, className = "", type = "button" }: { children: React.ReactNode, onClick?: () => void, className?: string, type?: "button" | "submit" | "reset" }) => (
+const Button = ({
+  children,
+  onClick,
+  className = "",
+  type = "button"
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+  type?: "button" | "submit" | "reset";
+}) => (
   <button
     type={type}
-    className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors ${className}`}
+    className={`px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors ${className}`}
     onClick={onClick}
   >
     {children}
   </button>
 );
+
 
 const Input = ({ label, type = "text", value, onChange, className = "", ...props }: { label: string, type?: string, value: any, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, className?: string, [key: string]: any }) => (
   <div className="mb-4">
@@ -42,26 +70,29 @@ const Select = ({ label, value, onChange, options, className = "" }: { label: st
 );
 
 const Tabs = ({ tabs, activeTab, onTabChange }: { tabs: string[], activeTab: string, onTabChange: (tab: string) => void }) => (
-  <div className="flex space-x-1 border-b border-gray-200 mb-6">
-    {tabs.map((tab) => (
-      <button
-        key={tab}
-        className={`px-4 py-2 focus:outline-none ${
-          activeTab === tab
-            ? "border-b-2 border-blue-500 font-medium text-blue-600"
-            : "text-gray-500 hover:text-gray-700"
-        }`}
-        onClick={() => onTabChange(tab)}
-      >
-        {tab}
-      </button>
-    ))}
+  <div className="overflow-x-auto no-scrollbar mb-6">
+    <div className="flex gap-2 min-w-max border-b border-gray-200">
+      {tabs.map((tab) => (
+        <button
+          key={tab}
+          className={`px-4 py-2 whitespace-nowrap focus:outline-none ${
+            activeTab === tab
+              ? "border-b-2 border-blue-500 font-medium text-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+          onClick={() => onTabChange(tab)}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
   </div>
 );
 
+
 const Card = ({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) => (
   <div className={`bg-white p-6 rounded-lg shadow-md mb-6 ${className}`}>
-    <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
+    <h3 className="text-lg font-medium text-black-900 mb-4">{title}</h3>
     {children}
   </div>
 );
@@ -107,16 +138,37 @@ const Table = ({ headers, data, onRowChange }: { headers: string[], data: any[],
   </div>
 );
 
-const initialCRSConfig = {
+ const initialCRSConfig = {
   agePoints: [
-    { age: 18, withSpouse: 90, withoutSpouse: 110 },
-    { age: 19, withSpouse: 95, withoutSpouse: 110 },
+    { age: 17, withSpouse: 0, withoutSpouse: 0 },
+    { age: 18, withSpouse: 90, withoutSpouse: 99 },
+    { age: 19, withSpouse: 95, withoutSpouse: 105 },
     { age: 20, withSpouse: 100, withoutSpouse: 110 },
+    { age: 21, withSpouse: 100, withoutSpouse: 110 },
+    { age: 22, withSpouse: 100, withoutSpouse: 110 },
+    { age: 23, withSpouse: 100, withoutSpouse: 110 },
+    { age: 24, withSpouse: 100, withoutSpouse: 110 },
+    { age: 25, withSpouse: 100, withoutSpouse: 110 },
+    { age: 26, withSpouse: 100, withoutSpouse: 110 },
+    { age: 27, withSpouse: 100, withoutSpouse: 110 },
+    { age: 28, withSpouse: 100, withoutSpouse: 110 },
     { age: 29, withSpouse: 100, withoutSpouse: 110 },
     { age: 30, withSpouse: 95, withoutSpouse: 105 },
-    { age: 35, withSpouse: 70, withoutSpouse: 80 },
-    { age: 40, withSpouse: 35, withoutSpouse: 45 },
-    { age: 45, withSpouse: 0, withoutSpouse: 0 },
+    { age: 31, withSpouse: 90, withoutSpouse: 99 },
+    { age: 32, withSpouse: 85, withoutSpouse: 94 },
+    { age: 33, withSpouse: 80, withoutSpouse: 88 },
+    { age: 34, withSpouse: 75, withoutSpouse: 83 },
+    { age: 35, withSpouse: 70, withoutSpouse: 77 },
+    { age: 36, withSpouse: 65, withoutSpouse: 72 },
+    { age: 37, withSpouse: 60, withoutSpouse: 66 },
+    { age: 38, withSpouse: 55, withoutSpouse: 61 },
+    { age: 39, withSpouse: 50, withoutSpouse: 55 },
+    { age: 40, withSpouse: 45, withoutSpouse: 50 },
+    { age: 41, withSpouse: 35, withoutSpouse: 39 },
+    { age: 42, withSpouse: 25, withoutSpouse: 28 },
+    { age: 43, withSpouse: 15, withoutSpouse: 17 },
+    { age: 44, withSpouse: 5, withoutSpouse: 6 },
+    { age: 45, withSpouse: 0, withoutSpouse: 0 }
   ],
   educationPoints: [
     { level: "less_than_secondary", withSpouse: 0, withoutSpouse: 0 },
@@ -128,45 +180,109 @@ const initialCRSConfig = {
     { level: "masters", withSpouse: 126, withoutSpouse: 135 },
     { level: "doctoral", withSpouse: 140, withoutSpouse: 150 },
   ],
+  spouseEducationPoints: [
+    { level: "less_than_secondary", points: 0 },
+    { level: "secondary", points: 2 },
+    { level: "one_year_post_secondary", points: 6 },
+    { level: "two_year_post_secondary", points: 7 },
+    { level: "bachelors", points: 8 },
+    { level: "two_or_more_degrees", points: 9 },
+    { level: "masters", points: 10 },
+    { level: "doctoral", points: 10 },
+  ],
   languagePoints: {
     firstLanguage: {
       clbConversion: {
         IELTS: [
-          { speaking: [0, 4.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { listening: [0, 4.5, 5.0, 5.5, 6.0, 7.5, 8.0, 8.5, 9.0], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { reading: [0, 3.5, 4.0, 4.5, 5.0, 6.0, 6.5, 7.0, 8.0, 9.0], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { writing: [0, 4.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          {
+            reading: [0,3.5, 4.0, 5.0, 6.0, 6.5, 7.0, 8.0],
+            clb:     [0,4,   5,   6,   7,   8,   9,   10]
+          },
+          {
+            writing: [0,4.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5],
+            clb:     [0,4,   5,   6,   7,   8,   9,   10]
+          },
+          {
+            listening: [0,4.5, 5.0, 5.5, 6.0, 7.5, 8.0, 8.5],
+            clb:       [0,4,   5,   6,   7,   8,   9,   10]
+          },
+          {
+            speaking: [0,4.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5],
+            clb:      [0,4,   5,   6,   7,   8,   9,   10]
+          },
         ],
         CELPIP: [
-          { speaking: [0, 4, 5, 6, 7, 8, 9, 10, 11, 12], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { listening: [0, 4, 5, 6, 7, 8, 9, 10, 11, 12], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { reading: [0, 4, 5, 6, 7, 8, 9, 10, 11, 12], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { writing: [0, 4, 5, 6, 7, 8, 9, 10, 11, 12], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          {
+            reading: [0,4, 5, 6, 7, 8, 9, 10],
+            clb:     [0,4, 5, 6, 7, 8, 9, 10]
+          },
+          {
+            writing: [0,4, 5, 6, 7, 8, 9, 10],
+            clb:     [0,4, 5, 6, 7, 8, 9, 10]
+          },
+          {
+            listening: [0,4, 5, 6, 7, 8, 9, 10],
+            clb:       [0,4, 5, 6, 7, 8, 9, 10]
+          },
+          {
+            speaking: [0,4, 5, 6, 7, 8, 9, 10],
+            clb:      [0,4, 5, 6, 7, 8, 9, 10]
+          },
         ],
         TEF: [
-          { speaking: [0, 181, 226, 271, 310, 349, 371, 393], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { listening: [0, 145, 181, 217, 249, 280, 298, 316], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { reading: [0, 121, 151, 181, 206, 233, 248, 263], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { writing: [0, 181, 226, 271, 310, 349, 371, 393], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          {
+            reading: [0, 306, 352, 393, 434, 462, 503, 546],
+            clb:     [0,   4,   5,   6,   7,   8,   9,  10]
+          },
+          {
+            writing: [0, 268, 330, 379, 428, 472, 512, 558],
+            clb:     [0,   4,   5,   6,   7,   8,   9,  10]
+          },
+          {
+            listening: [0, 306, 352, 393, 434, 462, 503, 546],
+            clb:       [0,   4,   5,   6,   7,   8,   9,  10]
+          },
+          {
+            speaking: [0, 328, 387, 422, 456, 494, 518, 556],
+            clb:      [0,   4,   5,   6,   7,   8,   9,  10]
+          },
         ],
         TCF: [
-          { speaking: [0, 4, 6, 10, 14, 18, 20], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { listening: [0, 331, 369, 397, 457, 503, 523], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { reading: [0, 342, 374, 406, 453, 499, 524], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
-          { writing: [0, 4, 6, 10, 14, 18, 20], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          {
+            reading: [0, 342, 375, 406, 453, 499, 524, 549],
+            clb:     [0,   4,   5,   6,   7,   8,   9,  10]
+          },
+          {
+            writing: [0, 4, 6, 7, 10, 12, 14, 16],
+            clb:     [0, 4, 5, 6, 7, 8, 9, 10]
+          },
+          {
+            listening: [0, 331, 369, 398, 458, 503, 523, 549],
+            clb:        [0,   4,   5,   6,   7,   8,   9,  10]
+          },
+          {
+            speaking: [0, 4, 6, 7, 10, 12, 14, 16],
+            clb:      [0, 4, 5, 6, 7, 8, 9, 10]
+          }
         ],
       },
       points: [
-        { skill: "speaking", clb4: 0, clb5: 6, clb6: 8, clb7: 16, clb8: 22, clb9: 26, clb10: 32 },
-        { skill: "listening", clb4: 0, clb5: 6, clb6: 8, clb7: 16, clb8: 22, clb9: 26, clb10: 32 },
-        { skill: "reading", clb4: 0, clb5: 6, clb6: 8, clb7: 16, clb8: 22, clb9: 26, clb10: 32 },
-        { skill: "writing", clb4: 0, clb5: 6, clb6: 8, clb7: 16, clb8: 22, clb9: 26, clb10: 32 },
+        { skill: "speaking", clb4: 6, clb5: 6, clb6: 9, clb7: 17, clb8: 23, clb9: 31, clb10: 34 },
+        { skill: "listening", clb4: 6, clb5: 6, clb6: 9, clb7: 17, clb8: 23, clb9: 31, clb10: 34 },
+        { skill: "reading", clb4: 6, clb5: 6, clb6: 9, clb7: 17, clb8: 23, clb9: 31, clb10: 34 },
+        { skill: "writing", clb4: 6, clb5: 6, clb6: 9, clb7: 17, clb8: 23, clb9: 31, clb10: 34 },
+      ],
+      pointsWithSpouse: [
+        { skill: "speaking", clb4: 6, clb5: 6, clb6: 8, clb7: 16, clb8: 22, clb9: 29, clb10: 32 },
+        { skill: "listening", clb4: 6, clb5: 6, clb6: 8, clb7: 16, clb8: 22, clb9: 29, clb10: 32 },
+        { skill: "reading", clb4: 6, clb5: 6, clb6: 8, clb7: 16, clb8: 22, clb9: 29, clb10: 32 },
+        { skill: "writing", clb4: 6, clb5: 6, clb6: 8, clb7: 16, clb8: 22, clb9: 29, clb10: 32 },
       ],
       spousePoints: [
-        { skill: "speaking", clb4: 0, clb5: 1, clb6: 3, clb7: 5, clb8: 5, clb9: 5, clb10: 5 },
-        { skill: "listening", clb4: 0, clb5: 1, clb6: 3, clb7: 5, clb8: 5, clb9: 5, clb10: 5 },
-        { skill: "reading", clb4: 0, clb5: 1, clb6: 3, clb7: 5, clb8: 5, clb9: 5, clb10: 5 },
-        { skill: "writing", clb4: 0, clb5: 1, clb6: 3, clb7: 5, clb8: 5, clb9: 5, clb10: 5 },
+        { skill: "speaking", clb4: 0, clb5: 1, clb6: 1, clb7: 3, clb8: 3, clb9: 5, clb10: 5 },
+        { skill: "listening", clb4: 0, clb5: 1, clb6: 1, clb7: 3, clb8: 3, clb9: 5, clb10: 5 },
+        { skill: "reading", clb4: 0, clb5: 1, clb6: 1, clb7: 3, clb8: 3, clb9: 5, clb10: 5 },
+        { skill: "writing", clb4: 0, clb5: 1, clb6: 1, clb7: 3, clb8: 3, clb9: 5, clb10: 5 },
       ]
     },
     secondLanguage: {
@@ -180,11 +296,13 @@ const initialCRSConfig = {
   },
   workExperiencePoints: {
     foreign: [
+      { years: 0, withSpouse: 0, withoutSpouse: 0 },
       { years: 1, withSpouse: 13, withoutSpouse: 25 },
       { years: 2, withSpouse: 25, withoutSpouse: 50 },
       { years: 3, withSpouse: 38, withoutSpouse: 75 },
     ],
     canadian: [
+      { years: 0, withSpouse: 0, withoutSpouse: 0 },
       { years: 1, withSpouse: 35, withoutSpouse: 40 },
       { years: 2, withSpouse: 46, withoutSpouse: 53 },
       { years: 3, withSpouse: 56, withoutSpouse: 64 },
@@ -224,12 +342,12 @@ const initialCRSConfig = {
     foreignWorkExperience: {
       clb7: [
         { years: 1, points: 13 },
-        { years: 2, points: 25 },
+        { years: 2, points: 13 },
         { years: 3, points: 25 },
       ],
       clb9: [
         { years: 1, points: 25 },
-        { years: 2, points: 50 },
+        { years: 2, points: 25 },
         { years: 3, points: 50 },
       ]
     },
@@ -239,6 +357,8 @@ const initialCRSConfig = {
         { canadianYears: 1, foreignYears: 2, points: 25 },
         { canadianYears: 2, foreignYears: 1, points: 13 },
         { canadianYears: 2, foreignYears: 2, points: 25 },
+        { canadianYears: 1, foreignYears: 3, points: 25 },
+        { canadianYears: 3, foreignYears: 2, points: 50 },
       ],
       educationCombination: [
         { canadianYears: 1, level: "secondary", points: 0 },
@@ -248,6 +368,12 @@ const initialCRSConfig = {
         { canadianYears: 1, level: "two_or_more_degrees", points: 25 },
         { canadianYears: 1, level: "masters", points: 25 },
         { canadianYears: 1, level: "doctoral", points: 25 },
+        { canadianYears: 2, level: "one_year_post_secondary", points: 25 },
+        { canadianYears: 2, level: "two_year_post_secondary", points: 50 },
+        { canadianYears: 2, level: "bachelors", points: 50 },
+        { canadianYears: 2, level: "two_or_more_degrees", points: 50 },
+        { canadianYears: 2, level: "masters", points: 50 },
+        { canadianYears: 2, level: "doctoral", points: 50 },
       ]
     }
   },
@@ -272,62 +398,91 @@ const initialCRSConfig = {
   },
   programMinimums: {
     FSW: {
-      minLanguagePoints: 16, // CLB 7 minimum
+      minLanguagePoints: 7, // CLB 7 minimum
       minEducation: "secondary",
       minExperience: 1, // years
       minPoints: 67
     },
     CEC: {
       minLanguagePoints: {
-        NOC_0_A: 16, // CLB 7 minimum
-        NOC_B: 13    // CLB 5 minimum
+        NOC_0_A: 7, // CLB 7 minimum
+        NOC_B: 5    // CLB 5 minimum
       },
       minCanadianExperience: 1 // year
     },
     FST: {
       minLanguagePoints: {
-        speaking: 13, // CLB 5 minimum
-        listening: 13, // CLB 5 minimum
-        reading: 7,    // CLB 4 minimum
-        writing: 7     // CLB 4 minimum
+        speaking: 5, // CLB 5 minimum
+        listening: 5, // CLB 5 minimum
+        reading: 4,    // CLB 4 minimum
+        writing: 4     // CLB 4 minimum
       },
       minExperience: 2 // years
     }
   },
   cutOffScores: {
-    FSW: 470,
-    CEC: 458,
-    FST: 375,
-    PNP: 720,
-    generalDraw: 490
+    FSW: 489,
+    CEC: 521,
+    FST: 436,
+    PNP: 736,
+    FLP: 379,
+    General: 529
   }
-};
+}; 
+
+
 
 const CRSDashboard = () => {
   const [crsConfig, setCRSConfig] = useState(initialCRSConfig);
-  const [activeTab, setActiveTab] = useState("Age");
+  const [activeTab, setActiveTab] = useState("Edad");
   const [saveStatus, setSaveStatus] = useState("");
   const [activeLanguageTestTab, setActiveLanguageTestTab] = useState("IELTS");
-  
+  const [educationActiveTab, setEducationActiveTab] = useState("Solicitante Principal");
+  const educationTabs = ["Solicitante Principal", "Esposo(a)"];
+  const [firstLanguageActiveTab, setFirstLanguageActiveTab] = useState("Soltero(a)");
+  const firstLanguageTabs = ["Soltero(a)", "Con Esposo(a)"];
+
   useEffect(() => {
-    const savedConfig = localStorage.getItem('crsConfig');
-    if (savedConfig) {
-      try {
-        setCRSConfig(JSON.parse(savedConfig));
-      } catch (e) {
-        console.error("Error loading saved CRS config:", e);
-      }
-    }
+    const loadConfig = async () => {
+        console.log('Data cargada desde el archivo JSON:');
+        setCRSConfig(initialCRSConfig);
+    };
+    loadConfig();
   }, []);
 
+  const normalizeCLBArray = (arr: any[]) => {
+    return arr.map(obj => {
+      const skill = Object.keys(obj).find(k => k !== 'clb');
+      return {
+        skill,
+        values: skill ? obj[skill] : undefined,
+        clb: obj.clb
+      };
+    });
+  };
+  
+  
+
+  const prepareCRSConfig = (config: any) => {
+    const newConfig = { ...config };
+    const clbConv = config.languagePoints.firstLanguage.clbConversion;
+  
+    for (const exam of Object.keys(clbConv)) {
+      newConfig.languagePoints.firstLanguage.clbConversion[exam] =
+        normalizeCLBArray(clbConv[exam]);
+    }
+  
+    return newConfig;
+  };
+
   const tabs = [
-    "Age", 
-    "Education", 
-    "Language", 
-    "Work Experience", 
-    "Transferability", 
-    "Additional Points",
-    "Program Requirements"
+    "Edad", 
+    "Educacion", 
+    "Idioma", 
+    "Experiencia Laboral", 
+    "Transferibilidad", 
+    "Puntos Adicionales",
+    "Requisitos de Programa"
   ];
 
   const languageTestTabs = ["IELTS", "CELPIP", "TEF", "TCF"];
@@ -344,9 +499,9 @@ const CRSDashboard = () => {
             target = target[subsectionParts[i] as keyof typeof target];
           }
           
-          target[subsectionParts[subsectionParts.length - 1]][rowIndex][key] = value;
+          ((target as Record<string, any>)[subsectionParts[subsectionParts.length - 1]] as any)[rowIndex][key] = value;
         } else {
-          newConfig[section as keyof typeof newConfig][rowIndex][key] = value;
+          (newConfig[section as keyof typeof newConfig] as { [key: string]: any }[])[rowIndex][key] = value;
         }
         return newConfig;
       });
@@ -362,7 +517,9 @@ const CRSDashboard = () => {
       if (skillTableIndex !== -1) {
         const skillTable = conversionTable[skillTableIndex];
         if (key === 'testScore') {
-          skillTable[skillType as keyof typeof skillTable][rowIndex] = value;
+          if (skillTable && Array.isArray(skillTable[skillType as keyof typeof skillTable])) {
+            (skillTable[skillType as keyof typeof skillTable] as any[])[rowIndex] = value;
+          }
         } else if (key === 'clbLevel') {
           const clbArrayIndex = conversionTable.findIndex(item => 'clb' in item);
           if (clbArrayIndex !== -1) {
@@ -381,6 +538,7 @@ const CRSDashboard = () => {
 
   const handleSave = async () => {
     try {
+      //handleSaveToDatabase();
       localStorage.setItem('crsConfig', JSON.stringify(crsConfig));
       
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -402,38 +560,51 @@ const CRSDashboard = () => {
 
   const renderTabContent = () => {
     switch(activeTab) {
-      case "Age":
+      case "Edad":
         return (
-          <Card title="Age Points Configuration">
+          <Card title="Configuracion de Puntos de Edad">
             <Table 
-              headers={["Age", "With Spouse", "Without Spouse"]}
+              headers={["Edad", "Con Esposo(a)", "Sin Esposo(a)"]}
               data={crsConfig.agePoints}
               onRowChange={handleTableRowChange('agePoints')}
             />
-            <p className="text-sm text-gray-500 mt-2">
-              Note: Points are interpolated for ages between the values in the table.
+            <p className="text-sm text-black-500 mt-2">
+              Nota: Los puntos son interpolados para las edades que estan entre los valores de la tabla.
             </p>
           </Card>
         );
       
-      case "Education":
-        return (
-          <Card title="Education Points Configuration">
-            <Table 
-              headers={["Education Level", "With Spouse", "Without Spouse"]}
-              data={crsConfig.educationPoints}
-              onRowChange={handleTableRowChange('educationPoints')}
-            />
-            <p className="text-sm text-gray-500 mt-2">
-              Note: Foreign education credentials should have an Educational Credential Assessment (ECA).
-            </p>
-          </Card>
-        );
-      
-      case "Language":
+        case "Educacion":
+          return (
+            <Card title="Configuracion de Puntos de Educacion">
+              <Tabs 
+                tabs={educationTabs} 
+                activeTab={educationActiveTab} 
+                onTabChange={(tab) => setEducationActiveTab(tab)}
+              />
+              {educationActiveTab === "Solicitante Principal" ? (
+                <Table 
+                  headers={["Nivel Educativo", "Con Esposo(a)", "Sin Esposo(a)"]}
+                  data={crsConfig.educationPoints}
+                  onRowChange={handleTableRowChange('educationPoints')}
+                />
+              ) : (
+                <Table 
+                  headers={["Nivel Educativo", "Puntos"]}
+                  data={crsConfig.spouseEducationPoints}
+                  onRowChange={handleTableRowChange('spouseEducationPoints')}
+                />
+              )}
+              <p className="text-sm text-black-500 mt-2">
+                Nota: Las Credenciales de Educacion Superior Extranjeras Requieren un ECA.
+              </p>
+            </Card>
+          );
+        
+      case "Idioma":
         return (
           <>
-            <Card title="Language Tests to CLB Conversion">
+            <Card title="Conversion de Examen de Idioma a CLB">
               <Tabs 
                 tabs={languageTestTabs} 
                 activeTab={activeLanguageTestTab} 
@@ -441,23 +612,27 @@ const CRSDashboard = () => {
               />
               <div className="space-y-6">
                 {['speaking', 'listening', 'reading', 'writing'].map(skill => {
-                  const skillData = crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion]
-                    .find(s => Object.keys(s)[0] === skill);
+                  const rawData = crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion];
+
+                  const skillEntry = rawData.find(entry =>
+                    (isNewCLBEntry(entry) && entry.skill === skill) ||
+                    (!isNewCLBEntry(entry) && skill in entry)
+                  );
                   
-                  const clbData = crsConfig.languagePoints.firstLanguage.clbConversion[activeLanguageTestTab as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion]
-                    .find(s => 'clb' in s);
-                    
-                  const tableData = skillData && clbData ? 
-                    (skillData[skill as keyof typeof skillData] || []).map((score: any, i: number) => ({
-                      testScore: score, 
-                      clbLevel: clbData.clb[i] || 0
-                    })) : [];
+                  const values = isNewCLBEntry(skillEntry) ? skillEntry.values : skillEntry?.[skill as keyof typeof skillEntry];
+                  const clb = skillEntry?.clb ?? [];
+                  
+                  const tableData = values?.map((score: number, i: number) => ({
+                    testScore: score,
+                    clbLevel: clb[i] || 0
+                  })) ?? [];
+                  
                     
                   return (
                     <div key={skill}>
                       <h4 className="font-medium text-gray-700 mb-2 capitalize">{skill}</h4>
                       <Table 
-                        headers={["Test Score", "CLB Level"]}
+                        headers={["Test Score", "CLB Nivel"]}
                         data={tableData}
                         onRowChange={(rowIndex, key, value) => 
                           handleLanguageConversionChange(activeLanguageTestTab, skill, rowIndex, key, value)
@@ -469,15 +644,29 @@ const CRSDashboard = () => {
               </div>
             </Card>
             
-            <Card title="First Official Language Points">
-              <Table 
+            <Card title="Puntos del primer Idioma">
+            <Tabs 
+                tabs={firstLanguageTabs} 
+                activeTab={firstLanguageActiveTab} 
+                onTabChange={(tab) => setFirstLanguageActiveTab(tab)}
+              />
+              {firstLanguageActiveTab === "Soltero(a)" ? (
+                <Table 
                 headers={["Skill", "CLB 4", "CLB 5", "CLB 6", "CLB 7", "CLB 8", "CLB 9", "CLB 10+"]}
                 data={crsConfig.languagePoints.firstLanguage.points}
                 onRowChange={handleTableRowChange('languagePoints', 'firstLanguage.points')}
               />
+              ) : (
+                <Table 
+                headers={["Skill", "CLB 4", "CLB 5", "CLB 6", "CLB 7", "CLB 8", "CLB 9", "CLB 10+"]}
+                data={crsConfig.languagePoints.firstLanguage.pointsWithSpouse}
+                onRowChange={handleTableRowChange('languagePoints', 'firstLanguage.points')}
+              />
+              )}
+              
             </Card>
             
-            <Card title="Second Official Language Points">
+            <Card title="Puntos del segundo Idioma">
               <Table 
                 headers={["Skill", "CLB 4", "CLB 5", "CLB 6", "CLB 7", "CLB 8", "CLB 9", "CLB 10+"]}
                 data={crsConfig.languagePoints.secondLanguage.points}
@@ -485,7 +674,7 @@ const CRSDashboard = () => {
               />
             </Card>
             
-            <Card title="Spouse Language Points">
+            <Card title="Puntos de Idioma del/de la Esposo(a)">
               <Table 
                 headers={["Skill", "CLB 4", "CLB 5", "CLB 6", "CLB 7", "CLB 8", "CLB 9", "CLB 10+"]}
                 data={crsConfig.languagePoints.firstLanguage.spousePoints}
@@ -495,28 +684,28 @@ const CRSDashboard = () => {
           </>
         );
       
-      case "Work Experience":
+      case "Experiencia Laboral":
         return (
           <>
-            <Card title="Foreign Work Experience Points">
+            <Card title="Puntos Experiencia Laboral Extranjera">
               <Table 
-                headers={["Years", "With Spouse", "Without Spouse"]}
+                headers={["Años", "Con Esposo(a)", "Sin Esposo(a)"]}
                 data={crsConfig.workExperiencePoints.foreign}
                 onRowChange={handleTableRowChange('workExperiencePoints', 'foreign')}
               />
             </Card>
             
-            <Card title="Canadian Work Experience Points">
+            <Card title="Puntos Experiencia Laboral Canadiense">
               <Table 
-                headers={["Years", "With Spouse", "Without Spouse"]}
+                headers={["Años", "Con Esposo(a)", "Sin Esposo(a)"]}
                 data={crsConfig.workExperiencePoints.canadian}
                 onRowChange={handleTableRowChange('workExperiencePoints', 'canadian')}
               />
             </Card>
             
-            <Card title="Spouse Work Experience Points">
+            <Card title="Puntos Experiencia Laboral del/de la Esposo(a)">
               <Table 
-                headers={["Years", "Points"]}
+                headers={["Años", "Puntos"]}
                 data={crsConfig.workExperiencePoints.spouseExperience}
                 onRowChange={handleTableRowChange('workExperiencePoints', 'spouseExperience')}
               />
@@ -524,52 +713,52 @@ const CRSDashboard = () => {
           </>
         );
       
-      case "Transferability":
+      case "Transferibilidad":
         return (
           <>
-            <Card title="Education + Language (CLB 7+) Transferability">
+            <Card title="Transferibilidad Educacion + Idioma (CLB 7+)">
               <Table 
-                headers={["Education Level", "Points"]}
+                headers={["Nivel Educativo", "Puntos"]}
                 data={crsConfig.transferabilityPoints.education.clb7}
                 onRowChange={handleTableRowChange('transferabilityPoints', 'education.clb7')}
               />
             </Card>
             
-            <Card title="Education + Language (CLB 9+) Transferability">
+            <Card title="Transferibilidad Educacion + Idioma (CLB 9+)">
               <Table 
-                headers={["Education Level", "Points"]}
+                headers={["Nivel Educativo", "Puntos"]}
                 data={crsConfig.transferabilityPoints.education.clb9}
                 onRowChange={handleTableRowChange('transferabilityPoints', 'education.clb9')}
               />
             </Card>
             
-            <Card title="Foreign Work Experience + Language (CLB 7+) Transferability">
+            <Card title="Transferibilidad Experiencia Laboral Extranjera + Idioma (CLB 7+)">
               <Table 
-                headers={["Years", "Points"]}
+                headers={["Años", "Puntos"]}
                 data={crsConfig.transferabilityPoints.foreignWorkExperience.clb7}
                 onRowChange={handleTableRowChange('transferabilityPoints', 'foreignWorkExperience.clb7')}
               />
             </Card>
             
-            <Card title="Foreign Work Experience + Language (CLB 9+) Transferability">
+            <Card title="Transferibilidad Experiencia Laboral Extranjera + Idioma (CLB 9+)">
               <Table 
-                headers={["Years", "Points"]}
+                headers={["Años", "Puntos"]}
                 data={crsConfig.transferabilityPoints.foreignWorkExperience.clb9}
                 onRowChange={handleTableRowChange('transferabilityPoints', 'foreignWorkExperience.clb9')}
               />
             </Card>
             
-            <Card title="Foreign + Canadian Work Experience Transferability">
+            <Card title="Transferibilidad Experiencia Laboral Extranjera + Experiencia Laboral Canadiense">
               <Table 
-                headers={["Canadian Years", "Foreign Years", "Points"]}
+                headers={["Canadiense(Años)", "Extranjera(Años)", "Puntos"]}
                 data={crsConfig.transferabilityPoints.canadianWorkExperience.foreignExperience}
                 onRowChange={handleTableRowChange('transferabilityPoints', 'canadianWorkExperience.foreignExperience')}
               />
             </Card>
             
-            <Card title="Education + Canadian Work Experience Transferability">
+            <Card title="Transferibilidad Educacion + Experiencia Laboral Canadiense">
               <Table 
-                headers={["Canadian Years", "Education Level", "Points"]}
+                headers={["Canadiense(Años)", "Extranjera(Años)", "Puntos"]}
                 data={crsConfig.transferabilityPoints.canadianWorkExperience.educationCombination}
                 onRowChange={handleTableRowChange('transferabilityPoints', 'canadianWorkExperience.educationCombination')}
               />
@@ -577,22 +766,22 @@ const CRSDashboard = () => {
           </>
         );
       
-      case "Additional Points":
+      case "Puntos Adicionales":
         return (
           <>
-            <Card title="Canadian Education">
+            <Card title="Educacion Canadiense">
               <Table 
-                headers={["Level", "Points"]}
+                headers={["Nivel", "Puntos"]}
                 data={crsConfig.additionalPoints.canadianEducation}
                 onRowChange={handleTableRowChange('additionalPoints', 'canadianEducation')}
               />
             </Card>
             
-            <Card title="Other Additional Points">
+            <Card title="Otros Puntos Adicionales">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <Input 
-                    label="Provincial Nomination" 
+                    label="Nominacion Provincial" 
                     type="number"
                     value={crsConfig.additionalPoints.provincialNomination}
                     onChange={(e) => setCRSConfig(prev => ({
@@ -604,7 +793,7 @@ const CRSDashboard = () => {
                     }))}
                   />
                   <Input 
-                    label="Arranged Employment (NOC 00)" 
+                    label="Oferta de Empleo (NOC 00)" 
                     type="number"
                     value={crsConfig.additionalPoints.arrangedEmployment.noc_00}
                     onChange={(e) => setCRSConfig(prev => ({
@@ -619,7 +808,7 @@ const CRSDashboard = () => {
                     }))}
                   />
                   <Input 
-                    label="Arranged Employment (NOC 0, A, B)" 
+                    label="Oferta de Empleo (NOC 0, A, B)" 
                     type="number"
                     value={crsConfig.additionalPoints.arrangedEmployment.noc_0_A_B}
                     onChange={(e) => setCRSConfig(prev => ({
@@ -634,7 +823,7 @@ const CRSDashboard = () => {
                     }))}
                   />
                   <Input 
-                    label="Canadian Sibling" 
+                    label="Hermano(a) Canadiense" 
                     type="number"
                     value={crsConfig.additionalPoints.canadianSibling}
                     onChange={(e) => setCRSConfig(prev => ({
@@ -646,7 +835,7 @@ const CRSDashboard = () => {
                     }))}
                   />
                   <Input 
-                    label="French Language (NCLC 7+)" 
+                    label="Frances (CLB 7+)" 
                     type="number"
                     value={crsConfig.additionalPoints.frenchLanguage.nclc7}
                     onChange={(e) => setCRSConfig(prev => ({
@@ -661,7 +850,7 @@ const CRSDashboard = () => {
                     }))}
                   />
                   <Input 
-                    label="French (NCLC 7+) and English (CLB 4+)" 
+                    label="Frances (CLB 7+) e Ingles (CLB 5+)" 
                     type="number"
                     value={crsConfig.additionalPoints.frenchLanguage.nclc7_english_clb4}
                     onChange={(e) => setCRSConfig(prev => ({
@@ -693,13 +882,13 @@ const CRSDashboard = () => {
           </>
         );
       
-      case "Program Requirements":
+      case "Requisitos de Programa":
         return (
           <>
-            <Card title="Minimum Requirements for FSW">
+            <Card title="Requisitos Minimos para FSW">
               <div className="grid grid-cols-2 gap-4">
                 <Input 
-                  label="Minimum Language Points (CLB 7)" 
+                  label="Puntos Minimos de Idioma (CLB 7)" 
                   type="number"
                   value={crsConfig.programMinimums.FSW.minLanguagePoints}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -714,7 +903,7 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Select 
-                  label="Minimum Education" 
+                  label="Educacion Minima" 
                   value={crsConfig.programMinimums.FSW.minEducation}
                   onChange={(e) => setCRSConfig(prev => ({
                     ...prev,
@@ -727,17 +916,17 @@ const CRSDashboard = () => {
                     }
                   }))}
                   options={[
-                    { value: "less_than_secondary", label: "Less than Secondary" },
-                    { value: "secondary", label: "Secondary" },
-                    { value: "one_year_post_secondary", label: "One-year Post-secondary" },
-                    { value: "two_year_post_secondary", label: "Two-year Post-secondary" },
-                    { value: "bachelors", label: "Bachelor's Degree" },
-                    { value: "masters", label: "Master's Degree" },
-                    { value: "doctoral", label: "Doctoral Degree" },
+                    { value: "less_than_secondary", label: "Menos que Secundaria" },
+                    { value: "secondary", label: "Secundaria" },
+                    { value: "one_year_post_secondary", label: "Un año Post-Secundario" },
+                    { value: "two_year_post_secondary", label: "Dos Años Post-Secundarios" },
+                    { value: "bachelors", label: "Bachelor's (Pregrado)" },
+                    { value: "masters", label: "Master's" },
+                    { value: "doctoral", label: "Doctorado " },
                   ]}
                 />
                 <Input 
-                  label="Minimum Experience (years)" 
+                  label="Experiencia Minima (Años)" 
                   type="number"
                   value={crsConfig.programMinimums.FSW.minExperience}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -752,7 +941,7 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Input 
-                  label="Minimum Points" 
+                  label="Puntos Minimos" 
                   type="number"
                   value={crsConfig.programMinimums.FSW.minPoints}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -769,10 +958,10 @@ const CRSDashboard = () => {
               </div>
             </Card>
             
-            <Card title="Minimum Requirements for CEC">
+            <Card title="Requisitos Minimos para CEC">
               <div className="grid grid-cols-2 gap-4">
                 <Input 
-                  label="Minimum Language - NOC 0, A (CLB 7)" 
+                  label="Idioma Minimo - NOC 0, A (CLB 7)" 
                   type="number"
                   value={crsConfig.programMinimums.CEC.minLanguagePoints.NOC_0_A}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -790,7 +979,7 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Input 
-                  label="Minimum Language - NOC B (CLB 5)" 
+                  label="Idioma Minimo - NOC B (CLB 5)" 
                   type="number"
                   value={crsConfig.programMinimums.CEC.minLanguagePoints.NOC_B}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -808,7 +997,7 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Input 
-                  label="Minimum Canadian Experience (years)" 
+                  label="Experiencia Canadiense Minima (años)" 
                   type="number"
                   value={crsConfig.programMinimums.CEC.minCanadianExperience}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -825,10 +1014,10 @@ const CRSDashboard = () => {
               </div>
             </Card>
             
-            <Card title="Minimum Requirements for FST">
+            <Card title="Requisitos Minimos para FST">
               <div className="grid grid-cols-2 gap-4">
                 <Input 
-                  label="Minimum Speaking (CLB 5)" 
+                  label="Speaking Minimo (CLB 5)" 
                   type="number"
                   value={crsConfig.programMinimums.FST.minLanguagePoints.speaking}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -846,7 +1035,7 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Input 
-                  label="Minimum Listening (CLB 5)" 
+                  label="Listening Minimo (CLB 5)" 
                   type="number"
                   value={crsConfig.programMinimums.FST.minLanguagePoints.listening}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -864,7 +1053,7 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Input 
-                  label="Minimum Reading (CLB 4)" 
+                  label="Reading Minimo (CLB 4)" 
                   type="number"
                   value={crsConfig.programMinimums.FST.minLanguagePoints.reading}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -882,7 +1071,7 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Input 
-                  label="Minimum Writing (CLB 4)" 
+                  label="Writing Minimo (CLB 4)" 
                   type="number"
                   value={crsConfig.programMinimums.FST.minLanguagePoints.writing}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -900,7 +1089,7 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Input 
-                  label="Minimum Experience (years)" 
+                  label="Experiencia Minima (Años)" 
                   type="number"
                   value={crsConfig.programMinimums.FST.minExperience}
                   onChange={(e) => setCRSConfig(prev => ({
@@ -917,7 +1106,7 @@ const CRSDashboard = () => {
               </div>
             </Card>
             
-            <Card title="Cut-off Scores">
+            <Card title="Puntajes de Corte por Programa">
               <div className="grid grid-cols-2 gap-4">
                 <Input 
                   label="FSW Draw" 
@@ -968,14 +1157,26 @@ const CRSDashboard = () => {
                   }))}
                 />
                 <Input 
-                  label="General Draw" 
+                  label="FLP Draw" 
                   type="number"
-                  value={crsConfig.cutOffScores.generalDraw}
+                  value={crsConfig.cutOffScores.FLP}
                   onChange={(e) => setCRSConfig(prev => ({
                     ...prev,
                     cutOffScores: {
                       ...prev.cutOffScores,
-                      generalDraw: parseInt(e.target.value)
+                      PNP: parseInt(e.target.value)
+                    }
+                  }))}
+                />
+                <Input 
+                  label="Draw General" 
+                  type="number"
+                  value={crsConfig.cutOffScores.General}
+                  onChange={(e) => setCRSConfig(prev => ({
+                    ...prev,
+                    cutOffScores: {
+                      ...prev.cutOffScores,
+                      General: parseInt(e.target.value)
                     }
                   }))}
                 />
@@ -985,7 +1186,7 @@ const CRSDashboard = () => {
         );
         
       default:
-        return <div>Please select a tab</div>;
+        return <div>Seleccione una Tab Por Favor</div>;
     }
   };
 
@@ -993,15 +1194,15 @@ const CRSDashboard = () => {
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">CRS Dashboard</h1>
-          <p className="text-gray-600 mb-6">Configure parameters for the Comprehensive Ranking System calculator</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Dashboard CRS</h1>
+          <p className="text-gray-600 mb-6">Configure los Parametros de la Calculadora CRS</p>
           
           <div className="flex flex-wrap gap-2 mb-6">
             <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
-              Save Configuration
+              Guardar Configuracion
             </Button>
             <Button onClick={handleReset} className="bg-red-600 hover:bg-red-700">
-              Reset to Defaults
+              Valores Predeterminados
             </Button>
             {saveStatus && (
               <div className={`px-4 py-2 rounded-md ${saveStatus.includes('Error') ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
