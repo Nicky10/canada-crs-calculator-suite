@@ -1347,7 +1347,7 @@ const checkFSWEligibility = () => {
 
           {/* Imagen de la bandera */}
           <img
-            src="/flag.png" // Asegúrate de usar una ruta válida, por ejemplo: /canada-flag.png
+            src="src\images\flag.png" // Asegúrate de usar una ruta válida, por ejemplo: /canada-flag.png
             alt="Bandera de Canadá"
             className="w-32 h-auto ml-4"
           />
