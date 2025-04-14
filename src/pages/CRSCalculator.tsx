@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import flagImage from '../images/flag.png';
 // Self-contained UI components
 const Button = ({
   children,
@@ -1347,7 +1348,7 @@ const checkFSWEligibility = () => {
 
           {/* Imagen de la bandera */}
           <img
-            src="src\images\flag.png" // Asegúrate de usar una ruta válida, por ejemplo: /canada-flag.png
+            src={flagImage} // Asegúrate de usar una ruta válida, por ejemplo: /canada-flag.png
             alt="Bandera de Canadá"
             className="w-32 h-auto ml-4"
           />
