@@ -19,7 +19,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<CRSCalculator />} />
-          <Route path="/dashboard" element={<CRSDashboard />} />
+          <Route path="/calculadora-crs" element={<CRSCalculator />} />
+          <Route path="/canada-crs-calculator-suite" element={<CRSCalculator />} />
           <Route path="/calculator" element={<CRSCalculator />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
