@@ -164,6 +164,7 @@ interface CRSConfig {
       clbConversion: {
         IELTS: { [key: string]: any }[];
         CELPIP: { [key: string]: any }[];
+        PTE: { [key: string]: any }[];
         TEF: { [key: string]: any }[];
         TCF: { [key: string]: any }[];
       },
@@ -632,7 +633,30 @@ const checkFSWEligibility = () => {
               values: [0, 4, 6, 7, 10, 12, 14, 16],
               clb:    [0, 4, 5, 6, 7,  8,  9,  10]
             }
+          ],
+          PTE: [
+            {
+              skill: "listening",
+              values: [18, 28, 39, 50, 60, 71, 82, 89],
+              clb:    [3, 4, 5, 6, 7, 8, 9, 10]
+            },
+            {
+              skill: "reading",
+              values: [24, 33, 42, 51, 60, 69, 78, 88],
+              clb:    [3, 4, 5, 6, 7, 8, 9, 10]
+            },
+            {
+              skill: "speaking",
+              values: [34, 42, 51, 59, 68, 76, 84, 89],
+              clb:    [3, 4, 5, 6, 7, 8, 9, 10]
+            },
+            {
+              skill: "writing",
+              values: [32, 41, 51, 60, 69, 79, 88, 90],
+              clb:    [3, 4, 5, 6, 7, 8, 9, 10]
+            }
           ]
+          
         },
         points: [
           { skill: "speaking", clb4: 6, clb5: 6, clb6: 9, clb7: 17, clb8: 23, clb9: 31, clb10: 34 },
@@ -1114,7 +1138,7 @@ const checkFSWEligibility = () => {
           clbLevels.firstLanguage.listening >= 7 &&
           clbLevels.firstLanguage.reading >= 7 &&
           clbLevels.firstLanguage.writing >= 7 &&
-          (profile.secondLanguage.test === "IELTS" || profile.secondLanguage.test === "CELPIP") &&
+          (profile.secondLanguage.test === "IELTS" || profile.secondLanguage.test === "CELPIP"|| profile.secondLanguage.test === "PTE") &&
           clbLevels.secondLanguage.speaking >= 5 &&
           clbLevels.secondLanguage.listening >= 5 &&
           clbLevels.secondLanguage.reading >= 5 &&
@@ -1127,7 +1151,7 @@ const checkFSWEligibility = () => {
           clbLevels.secondLanguage.listening >= 7 &&
           clbLevels.secondLanguage.reading >= 7 &&
           clbLevels.secondLanguage.writing >= 7 &&
-          (profile.firstLanguage.test === "IELTS" || profile.firstLanguage.test === "CELPIP") &&
+          (profile.firstLanguage.test === "IELTS" || profile.firstLanguage.test === "CELPIP" || profile.firstLanguage.test === "PTE") &&
           clbLevels.firstLanguage.speaking >= 5 &&
           clbLevels.firstLanguage.listening >= 5 &&
           clbLevels.firstLanguage.reading >= 5 &&
@@ -1434,6 +1458,7 @@ const checkFSWEligibility = () => {
                       value: 'CELPIP',
                       label: 'CELPIP - Canadian English Language Proficiency Index Program',
                     },
+                    { value: 'PTE', label: 'PTE Core - Pearson Test of English' },
                     {value: 'TEF', label: "TEF - Test d'évaluation de français"},
                     {value: 'TCF', label: 'TCF - Test de connaissance du français'},
                   ]}
@@ -1483,7 +1508,8 @@ const checkFSWEligibility = () => {
                     {
                       value: 'CELPIP',
                       label: 'CELPIP - Canadian English Language Proficiency Index Program',
-                    },
+                    },                      
+                    { value: 'PTE', label: 'PTE Core - Pearson Test of English' },
                     {value: 'TEF', label: "TEF - Test d'évaluation de français"},
                     {value: 'TCF', label: 'TCF - Test de connaissance du français'},
                   ]}
@@ -1548,18 +1574,22 @@ const checkFSWEligibility = () => {
                     }
                   />
 
+<div style={{display: 'flex', flexDirection: 'column'}}>
                   <Select
                     label='Categoría NOC'
                     value={profile.nocCategory}
                     onChange={(e) => handleChange('nocCategory', e.target.value)}
                     options={[
-                      {value: '0', label: 'NOC Skill Level 0 - Management'},
-                      {value: 'A', label: 'NOC Skill Level A - Professional'},
-                      {value: 'B', label: 'NOC Skill Level B - Technical/Trades'},
-                      {value: 'C', label: 'NOC Skill Level C - Intermediate'},
-                      {value: 'D', label: 'NOC Skill Level D - Labour'},
+                      {value: '0', label: 'TEER 0'},
+                      {value: 'A', label: 'TEER 1'},
+                      {value: 'B', label: 'TEER 2'},
+                      {value: 'C', label: 'TEER 3'},
+                      {value: 'D', label: 'TEER 4'},
+                      {value: 'E', label: 'TEER 5'},
                     ]}
                   />
+                  <p>Para saber cual es tu TEER haz <a style={{color:"blue", textDecoration: "underline"}} href='https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/find-national-occupation-code.html' target='_blank' rel="noreferrer"> Click Aqui</a></p>
+                  </div>
                 </div>
               </Card>
 
@@ -1601,6 +1631,7 @@ const checkFSWEligibility = () => {
                           value: 'CELPIP',
                           label: 'CELPIP - Canadian English Language Proficiency Index Program',
                         },
+                        { value: 'PTE', label: 'PTE Core - Pearson Test of English' },
                         {value: 'TEF', label: "TEF - Test d'évaluation de français"},
                         {value: 'TCF', label: 'TCF - Test de connaissance du français'},
                       ]}
