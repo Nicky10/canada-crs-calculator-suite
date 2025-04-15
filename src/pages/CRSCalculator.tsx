@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Book, GraduationCap, FileCheck, Users, Award, Calculator, BookOpen } from "lucide-react";
+import { Link } from "react-router-dom"
+import {
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import flagImage from '../images/flag.png';
 // Self-contained UI components
 const Button = ({
@@ -410,6 +418,173 @@ const getAdaptabilityPoints = (profile: any): number => {
 
   return points; // Retorna los puntos de adaptabilidad
 };
+
+
+
+
+// Recommendations
+
+interface RecommendationProps {
+  englishScore?: number
+  frenchScore?: number
+  spouseLanguageScore?: number
+  totalScore: number
+  eligiblePrograms: string[]
+  lastDrawScore?: number
+  maritalStatus: string;
+}
+
+export function ScoreImprovementCards({
+  englishScore,
+  frenchScore,
+  spouseLanguageScore,
+  totalScore,
+  eligiblePrograms,
+  lastDrawScore,
+  maritalStatus
+}: RecommendationProps) {
+  console.log(englishScore, frenchScore, spouseLanguageScore, totalScore, eligiblePrograms, lastDrawScore, maritalStatus)
+  const recommendations = [];
+
+  // Verificar puntaje de inglés
+  if (englishScore !== undefined && englishScore < 8) {
+    recommendations.push({
+      title: "Mejora tu Inglés con CELPIP",
+      description: "Prepárate para el examen CELPIP y aumenta tus posibilidades de éxito",
+      icon: <Book className="h-6 w-6" />,
+      link: "https://www.planeta-immiland-education.com/store-celpip-preparation"
+    });
+  }
+
+  // Solo ingles sin frances mínimo
+  if ((frenchScore > 0 && frenchScore < 7)) {
+    recommendations.push({
+      title: "Mejora tu Frances",
+      description: "Incrementa tus puntos mejorando tu nivel de frances con nuestros programas especializados",
+      icon: <GraduationCap className="h-6 w-6" />,
+      link: "https://www.planeta-immiland-education.com/cursos-frances"
+    });
+  }
+
+  // Nada de frances
+  if ((!frenchScore)) {
+    recommendations.push({
+      title: "Aprende Frances",
+      description: "Incrementa tus puntos aprendiendo frances con nuestros programas especializados",
+      icon: <GraduationCap className="h-6 w-6" />,
+      link: "https://www.planeta-immiland-education.com/cursos-frances"
+    });
+  }
+
+  // Solo francés sin inglés mínimo
+  if (frenchScore && (!englishScore || englishScore < 5)) {
+    recommendations.push({
+      title: "Aprende Inglés",
+      description: "Incrementa tus puntos aprendiendo inglés con nuestros programas especializados.",
+      icon: <GraduationCap className="h-6 w-6" />,
+      link: "https://www.planeta-immiland-education.com/programas-ingles"
+    });
+  }
+
+  // Puntaje competitivo
+  if (eligiblePrograms.length > 0 && lastDrawScore && totalScore >= lastDrawScore - 50) {
+    recommendations.push({
+      title: "¡Comienza tu Proceso!",
+      description: "Tu puntaje es competitivo. Cotiza tu proceso de inmigración con nosotros.",
+      icon: <Award className="h-6 w-6" />,
+      link: "https://flow.immiland.app/flow/4e52566e-eefe-41e4-8123-5d51910c9402"
+    });
+  }
+
+  // Elegible pero puntos bajos
+  if (totalScore < lastDrawScore - 50) {
+    recommendations.push({
+      title: "Consulta Migratoria",
+      description: "Agenda una consulta para explorar cómo mejorar tu perfil y aumentar tus posibilidades.",
+      icon: <Calculator className="h-6 w-6" />,
+      link: "https://en.immilandcanada.com/migration/consultations"
+    });
+  }
+
+  // Recomendaciones para la pareja
+  if (maritalStatus === "married" && spouseLanguageScore !== undefined && spouseLanguageScore < 7) {
+    recommendations.push({
+      title: "Mejora el Idioma de tu Pareja",
+      description: "Cursos de inglés y francés disponibles para maximizar sus puntos.",
+      icon: <Users className="h-6 w-6" />,
+      links: {
+        english: "https://www.planeta-immiland-education.com/programas-ingles",
+        french: "https://www.planeta-immiland-education.com/cursos-frances"
+      }
+    });
+  }
+
+  // Si puede aplicar a algún programa, agregar opciones de guía/revisión
+  if (eligiblePrograms.length > 0) {
+    recommendations.push({
+      title: "Revisión Previa",
+      description: "Tienes tus documentos listos? Asegura tu aplicación con nuestro servicio de revisión previa.",
+      icon: <FileCheck className="h-6 w-6" />,
+      link: "https://en.immilandcanada.com/migration/revision-previa-a-envio"
+    });
+
+    recommendations.push({
+      title: "Guía de Aplicación",
+      description: "Obtén nuestra guía detallada para aplicar por ti mismo.",
+      icon: <BookOpen className="h-6 w-6" />,
+      link: "https://en.immilandcanada.com/migration/other-services"
+    });
+  }
+
+  return (
+    <Card title="Recomendaciones Personalizadas">
+      {recommendations.length === 0 ? (
+        <p className="text-center text-gray-600">No se encontraron recomendaciones basadas en tu perfil.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recommendations.map((rec, index) => (
+            <Card key={index} title={rec.title} className="h-full flex flex-col justify-between">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="p-2 bg-blue-100 rounded-full">{rec.icon}</div>
+                <p className="text-gray-700">{rec.description}</p>
+              </div>
+
+              {"links" in rec ? (
+                <div className="space-y-2">
+                  <a
+                    href={rec.links.english}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center py-2 px-4 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] transition"
+                  >
+                    Curso de Inglés ↗
+                  </a>
+                  <a
+                    href={rec.links.french}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center py-2 px-4 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] transition"
+                  >
+                    Curso de Francés ↗
+                  </a>
+                </div>
+              ) : (
+                <a
+                  href={rec.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center py-2 px-4 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] transition"
+                >
+                  Más Información ↗
+                </a>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
 
 // Main calculator component
 const CRSCalculator = () => {
@@ -1270,12 +1445,59 @@ const checkFSWEligibility = () => {
         eligibilityStatus,
         scoreComparison
       });
-      
     } catch (e) {
       console.error("Error calculating CRS score:", e);
       setError("An error occurred while calculating your CRS score. Please try again.");
     }
   };
+
+  
+      // Función auxiliar
+      const getLanguageScore = (test: string, clb: CLBLevels): number => {
+        if (!clb) return 0;
+        return Math.min(clb.speaking, clb.listening, clb.reading, clb.writing) ;
+      };
+
+      let englishScore: number | undefined;
+      let frenchScore: number | undefined;
+
+      const englishTests = ["IELTS", "CELPIP", "PTE"];
+      const frenchTests = ["TEF", "TCF"];
+
+      if (results) {
+        if (englishTests.includes(profile.firstLanguage.test)) {
+          englishScore = getLanguageScore(profile.firstLanguage.test, results.clbLevels.firstLanguage);
+        } else if (englishTests.includes(profile.secondLanguage.test)) {
+          englishScore = getLanguageScore(profile.secondLanguage.test, results.clbLevels.secondLanguage);
+        }
+
+        if (frenchTests.includes(profile.firstLanguage.test)) {
+          frenchScore = getLanguageScore(profile.firstLanguage.test, results.clbLevels.firstLanguage);
+        } else if (frenchTests.includes(profile.secondLanguage.test)) {
+          frenchScore = getLanguageScore(profile.secondLanguage.test, results.clbLevels.secondLanguage);
+        }
+      }
+
+      // Spouse score
+      const spouseLanguageScore = results
+        ? getLanguageScore(profile.spouseLanguage.test, results.clbLevels.spouseLanguage)
+        : undefined;
+
+      // Programas a los que es elegible
+      const eligiblePrograms: string[] = [];
+
+      if (results?.eligibilityStatus.FSW) eligiblePrograms.push("FSW");
+      if (results?.eligibilityStatus.CEC) eligiblePrograms.push("CEC");
+      if (results?.eligibilityStatus.FST) eligiblePrograms.push("FST");
+      if (results?.eligibilityStatus.frenchLanguageProficiency) eligiblePrograms.push("FLP");
+      if (profile.provincialNomination) eligiblePrograms.push("PNP");
+
+      // Último draw score relevante
+      const lastDrawScore = Math.min(
+        ...eligiblePrograms.map(program => crsConfig?.cutOffScores[program] || Infinity)
+      );
+
+      
 
   // Helper function to interpolate points for age or experience
   const interpolatePoints = (pointsTable: any[], keyField: string, value: number, pointsField: string): number => {
@@ -2241,6 +2463,17 @@ const checkFSWEligibility = () => {
                   </table>
                 </div>
               </Card>
+              {results && crsConfig && (
+                <ScoreImprovementCards
+                  englishScore={englishScore}
+                  frenchScore={frenchScore}
+                  spouseLanguageScore={spouseLanguageScore}
+                  totalScore={results.totalCRSScore}
+                  eligiblePrograms={eligiblePrograms}
+                  lastDrawScore={lastDrawScore}
+                  maritalStatus={profile.maritalStatus}
+                />
+              )}
 
               <div className='mt-6'>
                 <Button onClick={() => { setResults(null); scrollToTop(); }} className='px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors'>
