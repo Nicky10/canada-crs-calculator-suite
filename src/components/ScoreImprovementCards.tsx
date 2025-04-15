@@ -8,12 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
-import { Button } from "@/components/ui/button"
 
 interface RecommendationProps {
   englishScore?: number
@@ -30,12 +24,12 @@ export function ScoreImprovementCards({
   spouseLanguageScore,
   totalScore,
   eligiblePrograms,
-  lastDrawScore = 445
+  lastDrawScore
 }: RecommendationProps) {
   const recommendations = []
 
   // Verificar puntaje de inglés
-  if (englishScore !== undefined && englishScore < 8) {
+  if (englishScore && englishScore < 8) {
     recommendations.push({
       title: "Mejora tu Inglés con CELPIP",
       description: "Prepárate para el examen CELPIP y aumenta tus posibilidades de éxito",
@@ -101,8 +95,6 @@ export function ScoreImprovementCards({
       }
     })
   }
-
-  console.log({ englishScore, frenchScore, spouseLanguageScore, totalScore, eligiblePrograms, lastDrawScore });
 
   return (
     <div className="space-y-6">
