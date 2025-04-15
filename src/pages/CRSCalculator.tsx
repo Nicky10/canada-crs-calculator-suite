@@ -57,13 +57,10 @@ const CRSCalculator = () => {
   const calculateTotalPoints = () => {
     let points = 0;
 
-    // Language Proficiency (First Language)
     points += parseInt(firstLanguageScore || "0");
 
-    // Language Proficiency (Second Language)
     points += parseInt(secondLanguageScore || "0");
 
-    // Education
     switch (educationLevel) {
       case "secondary":
         points += 22;
@@ -90,7 +87,6 @@ const CRSCalculator = () => {
         break;
     }
 
-    // Canadian Work Experience
     switch (canadianWorkExperience) {
       case "one-year":
         points += 40;
@@ -111,7 +107,6 @@ const CRSCalculator = () => {
         break;
     }
 
-    // Age
     const ageValue = parseInt(age || "0");
     if (ageValue >= 18 && ageValue <= 35) {
       points += 100;
@@ -143,7 +138,6 @@ const CRSCalculator = () => {
       points += 0;
     }
 
-    // Spouse Factors
     switch (spouseEducationLevel) {
       case "secondary":
         points += 2;
@@ -192,7 +186,6 @@ const CRSCalculator = () => {
         break;
     }
 
-    // Additional Points
     if (hasJobOffer) {
       points += 50;
     }
@@ -399,7 +392,7 @@ const CRSCalculator = () => {
             <Checkbox
               id="hasJobOffer"
               checked={hasJobOffer}
-              onCheckedChange={setHasJobOffer}
+              onCheckedChange={(checked) => setHasJobOffer(checked === true)}
             />
             <Label htmlFor="hasJobOffer">Has Job Offer</Label>
           </div>
@@ -410,7 +403,7 @@ const CRSCalculator = () => {
             <Checkbox
               id="hasNomination"
               checked={hasNomination}
-              onCheckedChange={setHasNomination}
+              onCheckedChange={(checked) => setHasNomination(checked === true)}
             />
             <Label htmlFor="hasNomination">Has Nomination</Label>
           </div>
@@ -422,7 +415,7 @@ const CRSCalculator = () => {
       </form>
 
       {showResults && (
-        <div className="mt-8">
+        <div className="container mx-auto mt-8 p-8">
           <h2 className="text-2xl font-bold mb-4">Results</h2>
           <Table>
             <TableCaption>
@@ -504,20 +497,17 @@ const CRSCalculator = () => {
               ))}
             </ul>
           </div>
-        </div>
-      )}
 
-      {/* Agregar la sección de recomendaciones después de la comparación de puntajes */}
-      {showResults && (
-        <div className="mt-8">
-          <ScoreImprovementCards
-            englishScore={Number(firstLanguageScore)}
-            frenchScore={Number(secondLanguageScore)}
-            spouseLanguageScore={Number(spouseLanguageScore)}
-            totalScore={Number(totalPoints)}
-            eligiblePrograms={eligiblePrograms}
-            lastDrawScore={445} // Este valor debería ser dinámico basado en el último draw
-          />
+          <div className="mt-8">
+            <ScoreImprovementCards
+              englishScore={Number(firstLanguageScore) || undefined}
+              frenchScore={Number(secondLanguageScore) || undefined}
+              spouseLanguageScore={Number(spouseLanguageScore) || undefined}
+              totalScore={totalPoints}
+              eligiblePrograms={eligiblePrograms}
+              lastDrawScore={445}
+            />
+          </div>
         </div>
       )}
     </div>
