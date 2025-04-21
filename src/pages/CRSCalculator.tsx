@@ -150,6 +150,90 @@ const LanguageTestInput = ({ languageTest, values, onChange }: {
   </div>
 );
 
+// New LanguageSelectInput component to handle language test selection and CLB level input
+const LanguageSelectInput = ({
+  languageTest,
+  values,
+  onChange,
+  crsConfig
+}: {
+  languageTest: string,
+  values: CLBLevels,
+  onChange: (skill: string, value: number) => void,
+  crsConfig: CRSConfig | null
+}) => {
+  if (!crsConfig) return null;
+  const conversion =
+    crsConfig.languagePoints.firstLanguage.clbConversion[
+      languageTest as keyof typeof crsConfig.languagePoints.firstLanguage.clbConversion
+    ];
+
+  const renderSkillDropdown = (skill: keyof CLBLevels) => {
+    const skillData = conversion.find((row) => row.skill === skill);
+    if (!skillData) return null;
+
+    const uniqueValues: number[] = [...new Set(skillData.values)].filter((v): v is number => typeof v === "number" && v !== 0);
+    uniqueValues.sort((a, b) => Number(a) - Number(b));
+
+    let options: { value: number; label: string }[] = [];
+
+    const hasEqualSteps = uniqueValues.every((val, i, arr) => {
+      if (i === 0) return true;
+      return Number(val) - Number(arr[i - 1]) === Number(arr[1]) - Number(arr[0]);
+    });
+
+    if (hasEqualSteps && uniqueValues.length < 15) {
+      // Ejemplo: CELPIP (valores fijos)
+      options = uniqueValues.map((val) => ({
+        value: val as number,
+        label: val.toString()
+      }));
+    } else {
+      // Ejemplo: TEF / TCF → Mostrar como rangos
+      for (let i = 0; i < uniqueValues.length; i++) {
+        const current = uniqueValues[i];
+        const next = uniqueValues[i + 1];
+        if (next !== undefined) {
+          options.push({
+            value: current,
+            label: `${current} - ${next - 1}`
+          });
+        } else {
+          options.push({
+            value: current,
+            label: `${current}+`
+          });
+        }
+      }
+    }
+
+    return (
+      <Select
+        key={skill}
+        label={skill.charAt(0).toUpperCase() + skill.slice(1)}
+        value={values[skill] === 0 ? "" : values[skill].toString()}
+        onChange={(e) => onChange(skill, parseFloat(e.target.value))}
+        options={[
+          { value: "", label: "Select..." },
+          ...options.map((opt) => ({
+            value: opt.value.toString(),
+            label: opt.label
+          }))
+        ]}
+      />
+    );
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {(["speaking", "listening", "reading", "writing"] as (keyof CLBLevels)[]).map((skill) =>
+        renderSkillDropdown(skill)
+      )}
+    </div>
+  );
+};
+
+
 //Calculo CLB de la persona
 const checkLanguagePoints = (
   speaking: number,
@@ -441,50 +525,143 @@ export function ScoreImprovementCards({
   totalScore,
   eligiblePrograms,
   lastDrawScore,
-  maritalStatus
-}: RecommendationProps) {
+  maritalStatus,
+  crsConfig,
+  results
+}: RecommendationProps & { crsConfig: CRSConfig, results: any }) {
   console.log(englishScore, frenchScore, spouseLanguageScore, totalScore, eligiblePrograms, lastDrawScore, maritalStatus)
   const recommendations = [];
 
+  const getEnglishImprovement = (currentCLB: CLBLevels, targetCLB: number): number => {
+    const pointsTable = maritalStatus === "married"
+      ? crsConfig.languagePoints.firstLanguage.pointsWithSpouse
+      : crsConfig.languagePoints.firstLanguage.points;
+  
+    let currentPoints = 0;
+    let targetPoints = 0;
+  
+    pointsTable.forEach((row) => {
+      const skill = row.skill as keyof CLBLevels;
+      const currentLevel = currentCLB[skill];
+      const currentKey = `clb${currentLevel}`;
+      const targetKey = `clb${Math.max(currentLevel, targetCLB)}`; // no bajes de lo que ya tiene
+  
+      currentPoints += row[currentKey] || 0;
+      targetPoints += row[targetKey] || 0;
+    });
+  
+    const gain = targetPoints - currentPoints;
+  
+    console.log(`[English] From CLB ${Math.min(...Object.values(currentCLB))} → ${targetCLB}`);
+    console.log(`- First Language CRS: from ${currentPoints} → ${targetPoints} = +${gain}`);
+  
+    return gain;
+  };
+  
+
+  const getFrenchImprovement = (currentCLB: CLBLevels, targetCLB: number): number => {
+    const pointsTable = crsConfig.languagePoints.secondLanguage.points;
+  
+    let currentPoints = 0;
+    let targetPoints = 0;
+  
+    pointsTable.forEach((row) => {
+      const skill = row.skill;
+      const currentLevel = currentCLB[skill as keyof CLBLevels];
+      const currentKey = `clb${currentLevel}`;
+      const targetKey = `clb${targetCLB}`;
+  
+      currentPoints += row[currentKey] || 0;
+      targetPoints += row[targetKey] || 0;
+    });
+  
+    let coreImprovement = targetPoints - currentPoints;
+  
+    const baseBonus = crsConfig.additionalPoints.frenchLanguage.nclc7;
+    const extendedBonus = crsConfig.additionalPoints.frenchLanguage.nclc7_english_clb4;
+  
+    const hadBonus = Object.values(currentCLB).every((v) => v >= 7);
+    const willHaveBonus = targetCLB >= 7;
+  
+    // Bonos por francés
+    if (!hadBonus && willHaveBonus) {
+      coreImprovement += baseBonus;
+      if (englishScore && englishScore >= 5) {
+        coreImprovement += extendedBonus;
+      }
+    }
+  
+    if (hadBonus && (!englishScore || englishScore < 5) && englishScore >= 5) {
+      coreImprovement += extendedBonus - baseBonus;
+    }
+  
+    console.log(`[French] From CLB ${Math.min(...Object.values(currentCLB))} → ${targetCLB}`);
+    console.log(`- Second Language CRS: from ${currentPoints} → ${targetPoints} = +${targetPoints - currentPoints}`);
+    console.log(`- Bonus CRS Points: ${coreImprovement - (targetPoints - currentPoints)}`);
+    console.log(`- TOTAL Gain: ${coreImprovement}`);
+  
+    return coreImprovement;
+  };
+  
+   
+
   // Verificar puntaje de inglés
-  if (englishScore !== undefined && englishScore < 8) {
+  if (englishScore !== undefined && englishScore < 9) {
+    const extraPoints = getEnglishImprovement(results.clbLevels.firstLanguage, 9);
     recommendations.push({
       title: "Mejora tu Inglés con CELPIP",
-      description: "Prepárate para el examen CELPIP y aumenta tus posibilidades de éxito",
+      description: `Si mejoras tu inglés a CLB 9, podrías ganar aproximadamente ${extraPoints} puntos CRS adicionales.`,
       icon: <Book className="h-6 w-6" />,
       link: "https://www.planeta-immiland-education.com/store-celpip-preparation"
     });
   }
-
-  // Solo ingles sin frances mínimo
-  if ((frenchScore > 0 && frenchScore < 7)) {
+  
+  if (frenchScore !== undefined && frenchScore < 7) {
+    const extraPoints = getFrenchImprovement(results.clbLevels.secondLanguage, 7);
     recommendations.push({
-      title: "Mejora tu Frances",
-      description: "Incrementa tus puntos mejorando tu nivel de frances con nuestros programas especializados",
+      title: "Mejora tu Francés",
+      description: `Al alcanzar CLB 7 en francés, podrías sumar hasta ${extraPoints} puntos adicionales (incluyendo bonificaciones si también hablas inglés). Ademas, te volverias elegible a las rondas de FLP.`,
       icon: <GraduationCap className="h-6 w-6" />,
       link: "https://www.planeta-immiland-education.com/cursos-frances"
     });
   }
+  
 
-  // Nada de frances
-  if ((!frenchScore)) {
-    recommendations.push({
-      title: "Aprende Frances",
-      description: "Incrementa tus puntos aprendiendo frances con nuestros programas especializados",
-      icon: <GraduationCap className="h-6 w-6" />,
-      link: "https://www.planeta-immiland-education.com/cursos-frances"
-    });
-  }
+  // Nada de francés
+if (!frenchScore) {
+  const baseBonus = crsConfig.additionalPoints.frenchLanguage.nclc7;
+  const extendedBonus = crsConfig.additionalPoints.frenchLanguage.nclc7_english_clb4;
 
-  // Solo francés sin inglés mínimo
-  if (frenchScore && (!englishScore || englishScore < 5)) {
-    recommendations.push({
-      title: "Aprende Inglés",
-      description: "Incrementa tus puntos aprendiendo inglés con nuestros programas especializados.",
-      icon: <GraduationCap className="h-6 w-6" />,
-      link: "https://www.planeta-immiland-education.com/programas-ingles"
-    });
-  }
+  const currentCLB = { speaking: 0, listening: 0, reading: 0, writing: 0 };
+  const corePoints = getFrenchImprovement(currentCLB, 7);
+  const bonus = englishScore && englishScore >= 5 ? extendedBonus : baseBonus;
+
+  const totalGain = corePoints + bonus;
+
+  recommendations.push({
+    title: "Aprende Francés",
+    description: `Si aprendes francés y alcanzas CLB 7, podrías sumar hasta ${totalGain} puntos CRS (incluye bonificación por francés avanzado${englishScore >= 5 ? " + inglés" : ""}).`,
+    icon: <GraduationCap className="h-6 w-6" />,
+    link: "https://www.planeta-immiland-education.com/cursos-frances"
+  });
+}
+
+// Solo francés sin inglés mínimo
+if (frenchScore && (!englishScore || englishScore < 5)) {
+  const bonus = crsConfig.additionalPoints.frenchLanguage.nclc7_english_clb4;
+  const englishCore = getEnglishImprovement(results.clbLevels.firstLanguage, 5); // Usa el idioma que tenga inglés
+
+  const totalGain = bonus + englishCore;
+
+  recommendations.push({
+    title: "Aprende Inglés",
+    description: `Si alcanzas CLB 5 en inglés junto con tu francés, podrías sumar hasta ${totalGain} puntos CRS (incluye bonificación combinada por ambos idiomas).`,
+    icon: <GraduationCap className="h-6 w-6" />,
+    link: "https://www.planeta-immiland-education.com/programas-ingles"
+  });
+}
+
+  
 
   // Puntaje competitivo
   if (eligiblePrograms.length > 0 && lastDrawScore && totalScore >= lastDrawScore - 50) {
@@ -1670,7 +1847,17 @@ const checkFSWEligibility = () => {
                 <Select
                   label='Examen de Idioma'
                   value={profile.firstLanguage.test}
-                  onChange={(e) => handleLanguageChange('firstLanguage', 'test', e.target.value)}
+                  onChange={(e) => {
+                    const newTest = e.target.value;
+                
+                    // Cambia el examen
+                    handleLanguageChange('firstLanguage', 'test', newTest);
+                
+                    // Reinicia los valores de habilidades
+                    ["speaking", "listening", "reading", "writing"].forEach((skill) => {
+                      handleLanguageChange('firstLanguage', skill, 0); // 0 mostrará "Select..."
+                    });
+                  }}
                   options={[
                     {
                       value: 'IELTS',
@@ -1686,11 +1873,19 @@ const checkFSWEligibility = () => {
                   ]}
                 />
 
-                <LanguageTestInput
+                {/* <LanguageTestInput
                   languageTest={profile.firstLanguage.test}
                   values={profile.firstLanguage}
                   onChange={(skill, value) => handleLanguageChange('firstLanguage', skill, value)}
+                /> */}
+
+                <LanguageSelectInput
+                  languageTest={profile.firstLanguage.test}
+                  values={profile.firstLanguage}
+                  onChange={(skill, value) => handleLanguageChange("firstLanguage", skill, value)}
+                  crsConfig={crsConfig}
                 />
+
 
                 {clbLevels.firstLanguage && (
                   <div className='mt-4 p-3 bg-[#D8D7D6] rounded-md'>
@@ -1721,8 +1916,13 @@ const checkFSWEligibility = () => {
                 <Select
                   label='Examen de Idioma'
                   value={profile.secondLanguage.test}
-                  onChange={(e) => handleLanguageChange('secondLanguage', 'test', e.target.value)}
-                  options={[
+                  onChange={(e) => {
+                    const newTest = e.target.value;
+                    handleLanguageChange("secondLanguage", "test", newTest);
+                    ["speaking", "listening", "reading", "writing"].forEach((skill) => {
+                      handleLanguageChange("secondLanguage", skill, 0);
+                    });
+                  }}                  options={[
                     {
                       value: 'IELTS',
                       label: 'IELTS - International English Language Testing System',
@@ -1737,11 +1937,19 @@ const checkFSWEligibility = () => {
                   ]}
                 />
 
-                <LanguageTestInput
+                {/* <LanguageTestInput
                   languageTest={profile.secondLanguage.test}
                   values={profile.secondLanguage}
                   onChange={(skill, value) => handleLanguageChange('secondLanguage', skill, value)}
+                /> */}
+
+                <LanguageSelectInput
+                  languageTest={profile.secondLanguage.test}
+                  values={profile.secondLanguage}
+                  onChange={(skill, value) => handleLanguageChange("secondLanguage", skill, value)}
+                  crsConfig={crsConfig}
                 />
+
 
                 {clbLevels.secondLanguage && (
                   <div className='mt-4 p-3 bg-[#D8D7D6] rounded-md'>
@@ -1841,9 +2049,13 @@ const checkFSWEligibility = () => {
                     <Select
                       label='Examen de Idioma'
                       value={profile.spouseLanguage.test}
-                      onChange={(e) =>
-                        handleLanguageChange('spouseLanguage', 'test', e.target.value)
-                      }
+                      onChange={(e) => {
+                        const newTest = e.target.value;
+                        handleLanguageChange("spouseLanguage", "test", newTest);
+                        ["speaking", "listening", "reading", "writing"].forEach((skill) => {
+                          handleLanguageChange("spouseLanguage", skill, 0);
+                        });
+                      }}
                       options={[
                         {
                           value: 'IELTS',
@@ -1859,13 +2071,22 @@ const checkFSWEligibility = () => {
                       ]}
                     />
 
-                    <LanguageTestInput
+                    {/* <LanguageTestInput
                       languageTest={profile.spouseLanguage.test}
                       values={profile.spouseLanguage}
                       onChange={(skill, value) =>
                         handleLanguageChange('spouseLanguage', skill, value)
                       }
+                    /> */}
+
+                    <LanguageSelectInput
+                      languageTest={profile.spouseLanguage.test}
+                      values={profile.spouseLanguage}
+                      onChange={(skill, value) => handleLanguageChange("spouseLanguage", skill, value)}
+                      crsConfig={crsConfig}
                     />
+
+
                   </div>
 
                   <Input
@@ -1927,7 +2148,7 @@ const checkFSWEligibility = () => {
                   </div>
 
                   <div>
-                    <Select
+                    {/* <Select
                       label='Oferta de Trabajo'
                       value={profile.jobOffer}
                       onChange={(e) => handleChange('jobOffer', e.target.value)}
@@ -1937,7 +2158,7 @@ const checkFSWEligibility = () => {
                         {value: 'noc_0_A_B', label: 'NOC 0, A, or B'},
                         {value: 'other', label: 'Otro NOC'},
                       ]}
-                    />
+                    /> */}
                   </div>
                 </div>
               </Card>
@@ -2472,6 +2693,8 @@ const checkFSWEligibility = () => {
                   eligiblePrograms={eligiblePrograms}
                   lastDrawScore={lastDrawScore}
                   maritalStatus={profile.maritalStatus}
+                  crsConfig={crsConfig}
+                  results={results}
                 />
               )}
 
