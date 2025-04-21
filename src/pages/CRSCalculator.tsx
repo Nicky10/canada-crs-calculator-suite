@@ -584,16 +584,7 @@ export function ScoreImprovementCards({
     const willHaveBonus = targetCLB >= 7;
   
     // Bonos por francés
-    if (!hadBonus && willHaveBonus) {
-      coreImprovement += baseBonus;
-      if (englishScore && englishScore >= 5) {
-        coreImprovement += extendedBonus;
-      }
-    }
-  
-    if (hadBonus && (!englishScore || englishScore < 5) && englishScore >= 5) {
-      coreImprovement += extendedBonus - baseBonus;
-    }
+    coreImprovement += extendedBonus + baseBonus;
   
     console.log(`[French] From CLB ${Math.min(...Object.values(currentCLB))} → ${targetCLB}`);
     console.log(`- Second Language CRS: from ${currentPoints} → ${targetPoints} = +${targetPoints - currentPoints}`);
@@ -610,17 +601,17 @@ export function ScoreImprovementCards({
     const extraPoints = getEnglishImprovement(results.clbLevels.firstLanguage, 9);
     recommendations.push({
       title: "Mejora tu Inglés con CELPIP",
-      description: `Si mejoras tu inglés a CLB 9, podrías ganar aproximadamente ${extraPoints} puntos CRS adicionales.`,
+      description: `Si mejoras tu inglés a CLB 9, podrías ganar aproximadamente ${extraPoints} puntos CRS adicionales, alcanzando un total de ${extraPoints + totalScore} puntos CRS.`,
       icon: <Book className="h-6 w-6" />,
       link: "https://www.planeta-immiland-education.com/store-celpip-preparation"
     });
   }
   
-  if (frenchScore !== undefined && frenchScore < 7) {
+  if (frenchScore !== undefined && frenchScore !== 0 && frenchScore < 7) {
     const extraPoints = getFrenchImprovement(results.clbLevels.secondLanguage, 7);
     recommendations.push({
       title: "Mejora tu Francés",
-      description: `Al alcanzar CLB 7 en francés, podrías sumar hasta ${extraPoints} puntos adicionales (incluyendo bonificaciones si también hablas inglés). Ademas, te volverias elegible a las rondas de FLP.`,
+      description: `Al alcanzar CLB 7 en francés, podrías sumar hasta ${extraPoints} puntos adicionales (incluyendo bonificaciones si también hablas inglés), alcanzando un total de ${extraPoints + totalScore} puntos CRS. Ademas, podrias ser elegible a las rondas de FLP.`,
       icon: <GraduationCap className="h-6 w-6" />,
       link: "https://www.planeta-immiland-education.com/cursos-frances"
     });
@@ -640,7 +631,7 @@ if (!frenchScore) {
 
   recommendations.push({
     title: "Aprende Francés",
-    description: `Si aprendes francés y alcanzas CLB 7, podrías sumar hasta ${totalGain} puntos CRS (incluye bonificación por francés avanzado${englishScore >= 5 ? " + inglés" : ""}).`,
+    description: `Si aprendes francés y alcanzas CLB 7, podrías sumar hasta ${totalGain} puntos CRS (incluye bonificación por inglés en CLB 5) alcanzando un total de ${totalGain + totalScore} puntos CRS. Ademas, podrias ser elegible a las rondas de FLP.`,
     icon: <GraduationCap className="h-6 w-6" />,
     link: "https://www.planeta-immiland-education.com/cursos-frances"
   });
