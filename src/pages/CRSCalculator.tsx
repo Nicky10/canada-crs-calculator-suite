@@ -1099,6 +1099,7 @@ const checkFSWEligibility = () => {
           { canadianYears: 2, foreignYears: 2, points: 25 },
           { canadianYears: 1, foreignYears: 3, points: 25 },
           { canadianYears: 3, foreignYears: 2, points: 50 },
+          { canadianYears: 2, foreignYears: 3, points: 50 },
         ],
         educationCombination: [
           { canadianYears: 1, level: "secondary", points: 0 },
