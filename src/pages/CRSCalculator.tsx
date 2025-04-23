@@ -873,6 +873,7 @@ const checkFSWEligibility = () => {
     ],
     educationPoints: [
       { level: "less_than_secondary", withSpouse: 0, withoutSpouse: 0 },
+      { level: "none", withSpouse: 0, withoutSpouse: 0 },
       { level: "secondary", withSpouse: 28, withoutSpouse: 30 },
       { level: "one_year_post_secondary", withSpouse: 84, withoutSpouse: 90 },
       { level: "two_year_post_secondary", withSpouse: 91, withoutSpouse: 98 },
@@ -883,6 +884,7 @@ const checkFSWEligibility = () => {
     ],
     spouseEducationPoints: [
       { level: "less_than_secondary", points: 0 },
+      { level: "none", points: 0 },
       { level: "secondary", points: 2 },
       { level: "one_year_post_secondary", points: 6 },
       { level: "two_year_post_secondary", points: 7 },
@@ -1413,9 +1415,9 @@ const checkFSWEligibility = () => {
       if (profile.canadianWorkExperience > 0 && profile.foreignWorkExperience > 0) {
         const combinedExpEntry = crsConfig.transferabilityPoints.canadianWorkExperience.foreignExperience.find(
           e => e.canadianYears === Math.min(profile.canadianWorkExperience, 2) && 
-               e.foreignYears === Math.min(profile.foreignWorkExperience, 2)
+               e.foreignYears === Math.min(profile.foreignWorkExperience, 3)
         );
-        
+
         if (combinedExpEntry) {
           canadianForeignExpPointsUsed += combinedExpEntry.points;
           skillTransferabilityPoints += combinedExpEntry.points;
@@ -1780,12 +1782,12 @@ const checkFSWEligibility = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500 leading-relaxed">
-                  <span className="font-medium">Aviso:</span> Los resultados
-                  proporcionados por esta calculadora son estimaciones basadas
-                  en las regulaciones de inmigración canadienses vigentes y
-                  están sujetos a cambios. Para información oficial y la
-                  herramienta de cálculo autorizada, se recomienda visitar
-                  la&nbsp;
+                  <span className="font-medium">Aviso:</span> Esta calculadora es una herramienta orientativa diseñada únicamente con fines informativos. 
+                  Los resultados que proporciona son estimaciones basadas en las regulaciones de inmigración canadienses vigentes y están 
+                  sujetos a cambios sin previo aviso. Estos resultados no deben ser considerados como oficiales ni vinculantes.
+                  La única fuente oficial para conocer su puntaje en el sistema Express Entry es la calculadora publicada por Immigration, 
+                  Refugees and Citizenship Canada (IRCC) en su sitio web. Para obtener información precisa y actualizada, 
+                  le recomendamos consultar directamente la&nbsp;
                   <a
                     href="https://www.cic.gc.ca/english/immigrate/skilled/crs-tool.asp"
                     target="_blank"
@@ -1862,7 +1864,7 @@ const checkFSWEligibility = () => {
                       {
                         value: "less_than_secondary",
                         label:
-                          "Ninguno o menos que secundaria (escuela secundaria)",
+                          "Ninguno",
                       },
                       {
                         value: "secondary",
@@ -2108,7 +2110,7 @@ const checkFSWEligibility = () => {
                 )}
               </Card>
 
-              <Card title="Experiencia Laboral Calificada">
+              <Card title="Experiencia Laboral Calificada (En los ultimos 10 años)">
                 <p style={{ marginBottom: "30px" }}>
                   Esta experiencia debe ser full time, paga, en un puesto
                   calificado de TEER 0, 1, 2 o 3
@@ -2176,7 +2178,7 @@ const checkFSWEligibility = () => {
                       {
                         value: "less_than_secondary",
                         label:
-                          "Ninguno o menos que secundaria (escuela secundaria)",
+                          "Ninguno",
                       },
                       {
                         value: "secondary",
@@ -2276,7 +2278,7 @@ const checkFSWEligibility = () => {
                   </div>
 
                   <Input
-                    label="Experiencia Laboral Canadiense del/de la Esposo(a) (años)"
+                    label="Experiencia Laboral Canadiense en los ultimos 10 años del/de la Esposo(a) (años)"
                     type="number"
                     min={0}
                     max={5}
