@@ -29,7 +29,6 @@ const Button = ({
   </button>
 );
 
-
 const Input = ({ label, type = "text", value, onChange, className = "", min, max, step, ...props }: { label: string, type?: string, value: any, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, className?: string, min?: number, max?: number, step?: number, [key: string]: any }) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
@@ -600,8 +599,8 @@ export function ScoreImprovementCards({
   if (englishScore !== undefined && englishScore < 9) {
     const extraPoints = getEnglishImprovement(results.clbLevels.firstLanguage, 9);
     recommendations.push({
-      title: "Mejora tu Inglés con CELPIP",
-      description: `Si mejoras tu inglés a CLB 9, podrías ganar aproximadamente ${extraPoints} puntos CRS adicionales, alcanzando un total de ${extraPoints + totalScore} puntos CRS.`,
+      title: "Mejora tu nivel de Inglés",
+      description: `Con los cursos de preparación CELPIP de Planeta Immiland Education puedes mejorar tu nivel de inglés. Si llegas a CLB 9, podrías ganar aproximadamente ${extraPoints} puntos CRS adicionales, alcanzando un total de ${extraPoints + totalScore} puntos CRS.`,
       icon: <Book className="h-6 w-6" />,
       link: "https://www.planeta-immiland-education.com/store-celpip-preparation"
     });
@@ -759,6 +758,12 @@ const CRSCalculator = () => {
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [crsConfig, setCRSConfig] = useState<CRSConfig | null>(null);
   const topRef = React.useRef<HTMLDivElement>(null);
+  const [agregarPareja, setAgregarPareja] = useState("no");
+
+useEffect(() => {
+  console.log("Valor de agregarPareja cambió:", agregarPareja);
+  // Puedes poner aquí lógica condicional o actualizaciones relacionadas
+}, [agregarPareja]);
 
   // Función para calcular el total de puntos y verificar la elegibilidad
 const checkFSWEligibility = () => {
@@ -1220,7 +1225,21 @@ const checkFSWEligibility = () => {
   
   }, [JSON.stringify(profile), crsConfig]);
   
+  const meetsFrenchCLB7 = (
+    (["TEF", "TCF"].includes(profile.firstLanguage.test) &&
+      clbLevels.firstLanguage.speaking >= 7 &&
+      clbLevels.firstLanguage.listening >= 7 &&
+      clbLevels.firstLanguage.reading >= 7 &&
+      clbLevels.firstLanguage.writing >= 7)
+    ||
+    (["TEF", "TCF"].includes(profile.secondLanguage.test) &&
+      clbLevels.secondLanguage.speaking >= 7 &&
+      clbLevels.secondLanguage.listening >= 7 &&
+      clbLevels.secondLanguage.reading >= 7 &&
+      clbLevels.secondLanguage.writing >= 7)
+  );
   
+
   
 
   // Handle form input changes
@@ -1747,120 +1766,205 @@ const checkFSWEligibility = () => {
   
 
   return (
-    <div className='bg-gray-50 min-h-screen p-6'>
-      <div className='max-w-4xl mx-auto'>
-      <div ref={topRef}></div>
-        <div className='bg-white shadow-md rounded-lg p-6 mb-6 pb-40'>
-        <div className='flex justify-between items-start mb-4'>
-          {/* Título y descripción */}
-          <div>
-            <h1 className='text-2xl font-bold text-gray-800'>Calculadora CRS Express Entry</h1>
-            <p className='text-gray-600'>
-              Calcula tu puntaje CRS para migracion Canadiense.
-            </p>
+    <div className="bg-gray-50 min-h-screen p-6">
+      <div className="max-w-4xl mx-auto">
+        <div ref={topRef}></div>
+        <div className="bg-white shadow-md rounded-lg p-6 mb-6 pb-40">
+          <div className="flex justify-between items-start mb-4">
+            <div className="space-y-2">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">
+                  Calculadora CRS Express Entry
+                </h1>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  <span className="font-medium">Aviso:</span> Los resultados
+                  proporcionados por esta calculadora son estimaciones basadas
+                  en las regulaciones de inmigración canadienses vigentes y
+                  están sujetos a cambios. Para información oficial y la
+                  herramienta de cálculo autorizada, se recomienda visitar
+                  la&nbsp;
+                  <a
+                    href="https://www.cic.gc.ca/english/immigrate/skilled/crs-tool.asp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-blue-600 hover:text-blue-800"
+                  >
+                    calculadora oficial de Express Entry de Canadá ↗
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
+
+            <img
+              src={flagImage}
+              alt="Bandera de Canadá"
+              className="w-32 h-auto ml-4"
+            />
           </div>
 
-          {/* Imagen de la bandera */}
-          <img
-            src={flagImage} // Asegúrate de usar una ruta válida, por ejemplo: /canada-flag.png
-            alt="Bandera de Canadá"
-            className="w-32 h-auto ml-4"
-          />
-        </div>
-
           {error && (
-            <div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-6'>
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-6">
               {error}
             </div>
           )}
 
           {!results ? (
             <form onSubmit={calculateCRS}>
-              <Card title='Informacion Basica'>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <Card title="Informacion Basica">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
-                    label='Edad'
-                    type='number'
+                    label="Edad"
+                    type="number"
                     min={18}
                     max={55}
                     value={profile.age}
-                    onChange={(e) => handleChange('age', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleChange("age", parseInt(e.target.value))
+                    }
                   />
 
                   <Select
-                    label='Estado Civil'
+                    label="Estado Civil"
                     value={profile.maritalStatus}
-                    onChange={(e) => handleChange('maritalStatus', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("maritalStatus", e.target.value)
+                    }
                     options={[
-                      {value: 'single', label: 'Soltero(a)'},
-                      {value: 'married', label: 'Casado(a)/Union Libre'},
+                      { value: "single", label: "Soltero(a)" },
+                      { value: "married", label: "Casado(a)/Union Libre" },
                     ]}
                   />
+                  {profile.maritalStatus === "married" && (
+                    <Select
+                      label="¿Su pareja viene con usted a Canada?"
+                      value={agregarPareja}
+                      onChange={(e) => setAgregarPareja(e.target.value)} // ✅ Cambia el estado real
+                      options={[
+                        { value: "si", label: "Si" },
+                        { value: "no", label: "No" },
+                      ]}
+                    />
+                  )}
                 </div>
               </Card>
 
-              <Card title='Educacion'>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <Card title="Educacion">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Select
-                    label='Maximo Nivel de Educacion'
+                    label="Maximo Nivel de Educacion"
                     value={profile.education}
-                    onChange={(e) => handleChange('education', e.target.value)}
+                    onChange={(e) => handleChange("education", e.target.value)}
                     options={[
-                      {value: 'less_than_secondary', label: 'Menos que Secundaria/Bachillerato'},
-                      {value: 'secondary', label: 'Secundaria/Bachillerato'},
-                      {value: 'one_year_post_secondary', label: 'Un año de Programa Post-Secundario'},
-                      {value: 'two_year_post_secondary', label: 'Dos Años de Programa Post-Secundarios'},
-                      {value: 'bachelors', label: "Bachelor's (Pregrado)"},
                       {
-                        value: 'two_or_more_degrees',
-                        label: 'Dos o mas años de programa(s) Post-Secundarios',
+                        value: "less_than_secondary",
+                        label:
+                          "Ninguno o menos que secundaria (escuela secundaria)",
                       },
-                      {value: 'masters', label: "Masters"},
-                      {value: 'doctoral', label: 'Doctorado (PhD)'},
+                      {
+                        value: "secondary",
+                        label:
+                          "Diploma de secundaria (graduación de escuela secundaria)",
+                      },
+                      {
+                        value: "one_year_post_secondary",
+                        label:
+                          "Programa de un año en una universidad, colegio, escuela técnica u otro instituto",
+                      },
+                      {
+                        value: "two_year_post_secondary",
+                        label:
+                          "Programa de dos años en una universidad, colegio, escuela técnica u otro instituto",
+                      },
+                      {
+                        value: "bachelors",
+                        label:
+                          "Título de licenciatura o Pregrado (programa de tres o más años en una universidad, colegio, escuela técnica u otro instituto)",
+                      },
+                      {
+                        value: "two_or_more_degrees",
+                        label:
+                          "Dos o más certificados, diplomas o títulos. Uno debe ser de un programa de tres o más años",
+                      },
+                      {
+                        value: "masters",
+                        label:
+                          "Maestría o título profesional necesario para ejercer una profesión licenciada",
+                      },
+                      {
+                        value: "doctoral",
+                        label: "Título universitario de nivel doctoral (PhD)",
+                      },
                     ]}
                   />
 
                   <Select
-                    label='Educacion Canadiense (Si la tiene)'
+                    label="Educacion Canadiense (Si la tiene)"
                     value={profile.canadianEducation}
-                    onChange={(e) => handleChange('canadianEducation', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("canadianEducation", e.target.value)
+                    }
                     options={[
-                      {value: 'none', label: 'Ninguna'},
-                      {value: 'one_or_two_year', label: 'Credencial de uno o dos años'},
-                      {value: 'three_year_or_masters', label: "Credencial de tres años o más/Masters"},
-                      {value: 'doctoral', label: 'Doctorado (PhD)'},
+                      {
+                        value: "none",
+                        label: "Secundaria (escuela secundaria) o menos",
+                      },
+                      {
+                        value: "one_or_two_year",
+                        label: "Diploma o certificado de uno o dos años",
+                      },
+                      {
+                        value: "three_year_or_masters",
+                        label:
+                          "Título, diploma o certificado de tres años o más O un título de maestría, profesional o doctorado de al menos un año académico",
+                      },
                     ]}
                   />
                 </div>
               </Card>
 
-              <Card title='Primer Idioma Oficial'>
+              <Card title="Primer Idioma Oficial">
                 <Select
-                  label='Examen de Idioma'
+                  label="Examen de Idioma"
                   value={profile.firstLanguage.test}
                   onChange={(e) => {
                     const newTest = e.target.value;
-                
+
                     // Cambia el examen
-                    handleLanguageChange('firstLanguage', 'test', newTest);
-                
+                    handleLanguageChange("firstLanguage", "test", newTest);
+
                     // Reinicia los valores de habilidades
-                    ["speaking", "listening", "reading", "writing"].forEach((skill) => {
-                      handleLanguageChange('firstLanguage', skill, 0); // 0 mostrará "Select..."
-                    });
+                    ["speaking", "listening", "reading", "writing"].forEach(
+                      (skill) => {
+                        handleLanguageChange("firstLanguage", skill, 0); // 0 mostrará "Select..."
+                      }
+                    );
                   }}
                   options={[
                     {
-                      value: 'IELTS',
-                      label: 'IELTS - International English Language Testing System',
+                      value: "IELTS",
+                      label:
+                        "IELTS - International English Language Testing System",
                     },
                     {
-                      value: 'CELPIP',
-                      label: 'CELPIP - Canadian English Language Proficiency Index Program',
+                      value: "CELPIP",
+                      label:
+                        "CELPIP - Canadian English Language Proficiency Index Program",
                     },
-                    { value: 'PTE', label: 'PTE Core - Pearson Test of English' },
-                    {value: 'TEF', label: "TEF - Test d'évaluation de français"},
-                    {value: 'TCF', label: 'TCF - Test de connaissance du français'},
+                    {
+                      value: "PTE",
+                      label: "PTE Core - Pearson Test of English",
+                    },
+                    {
+                      value: "TEF",
+                      label: "TEF - Test d'évaluation de français",
+                    },
+                    {
+                      value: "TCF",
+                      label: "TCF - Test de connaissance du français",
+                    },
                   ]}
                 />
 
@@ -1873,58 +1977,83 @@ const checkFSWEligibility = () => {
                 <LanguageSelectInput
                   languageTest={profile.firstLanguage.test}
                   values={profile.firstLanguage}
-                  onChange={(skill, value) => handleLanguageChange("firstLanguage", skill, value)}
+                  onChange={(skill, value) =>
+                    handleLanguageChange("firstLanguage", skill, value)
+                  }
                   crsConfig={crsConfig}
                 />
 
-
                 {clbLevels.firstLanguage && (
-                  <div className='mt-4 p-3 bg-[#D8D7D6] rounded-md'>
-                    <h4 className='font-medium text-black-800 mb-2'>Equivalente en CLB</h4>
-                    <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
-                      <div className='text-center bg-white p-2 rounded shadow-sm'>
-                        <div className='font-bold text-lg'>{clbLevels.firstLanguage.speaking}</div>
-                        <div className='text-xs text-gray-500'>Speaking</div>
+                  <div className="mt-4 p-3 bg-[#D8D7D6] rounded-md">
+                    <h4 className="font-medium text-black-800 mb-2">
+                      Equivalente en CLB
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">
+                          {clbLevels.firstLanguage.speaking}
+                        </div>
+                        <div className="text-xs text-gray-500">Speaking</div>
                       </div>
-                      <div className='text-center bg-white p-2 rounded shadow-sm'>
-                        <div className='font-bold text-lg'>{clbLevels.firstLanguage.listening}</div>
-                        <div className='text-xs text-gray-500'>Listening</div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">
+                          {clbLevels.firstLanguage.listening}
+                        </div>
+                        <div className="text-xs text-gray-500">Listening</div>
                       </div>
-                      <div className='text-center bg-white p-2 rounded shadow-sm'>
-                        <div className='font-bold text-lg'>{clbLevels.firstLanguage.reading}</div>
-                        <div className='text-xs text-gray-500'>Reading</div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">
+                          {clbLevels.firstLanguage.reading}
+                        </div>
+                        <div className="text-xs text-gray-500">Reading</div>
                       </div>
-                      <div className='text-center bg-white p-2 rounded shadow-sm'>
-                        <div className='font-bold text-lg'>{clbLevels.firstLanguage.writing}</div>
-                        <div className='text-xs text-gray-500'>Writing</div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">
+                          {clbLevels.firstLanguage.writing}
+                        </div>
+                        <div className="text-xs text-gray-500">Writing</div>
                       </div>
                     </div>
                   </div>
                 )}
               </Card>
 
-              <Card title='Segundo Idioma Oficial(Opcional)'>
+              <Card title="Segundo Idioma Oficial(Opcional)">
                 <Select
-                  label='Examen de Idioma'
+                  label="Examen de Idioma"
                   value={profile.secondLanguage.test}
                   onChange={(e) => {
                     const newTest = e.target.value;
                     handleLanguageChange("secondLanguage", "test", newTest);
-                    ["speaking", "listening", "reading", "writing"].forEach((skill) => {
-                      handleLanguageChange("secondLanguage", skill, 0);
-                    });
-                  }}                  options={[
+                    ["speaking", "listening", "reading", "writing"].forEach(
+                      (skill) => {
+                        handleLanguageChange("secondLanguage", skill, 0);
+                      }
+                    );
+                  }}
+                  options={[
                     {
-                      value: 'IELTS',
-                      label: 'IELTS - International English Language Testing System',
+                      value: "IELTS",
+                      label:
+                        "IELTS - International English Language Testing System",
                     },
                     {
-                      value: 'CELPIP',
-                      label: 'CELPIP - Canadian English Language Proficiency Index Program',
-                    },                      
-                    { value: 'PTE', label: 'PTE Core - Pearson Test of English' },
-                    {value: 'TEF', label: "TEF - Test d'évaluation de français"},
-                    {value: 'TCF', label: 'TCF - Test de connaissance du français'},
+                      value: "CELPIP",
+                      label:
+                        "CELPIP - Canadian English Language Proficiency Index Program",
+                    },
+                    {
+                      value: "PTE",
+                      label: "PTE Core - Pearson Test of English",
+                    },
+                    {
+                      value: "TEF",
+                      label: "TEF - Test d'évaluation de français",
+                    },
+                    {
+                      value: "TCF",
+                      label: "TCF - Test de connaissance du français",
+                    },
                   ]}
                 />
 
@@ -1937,65 +2066,84 @@ const checkFSWEligibility = () => {
                 <LanguageSelectInput
                   languageTest={profile.secondLanguage.test}
                   values={profile.secondLanguage}
-                  onChange={(skill, value) => handleLanguageChange("secondLanguage", skill, value)}
+                  onChange={(skill, value) =>
+                    handleLanguageChange("secondLanguage", skill, value)
+                  }
                   crsConfig={crsConfig}
                 />
 
-
                 {clbLevels.secondLanguage && (
-                  <div className='mt-4 p-3 bg-[#D8D7D6] rounded-md'>
-                    <h4 className='font-medium text-black-800 mb-2'>Equivalente en CLB</h4>
-                    <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
-                      <div className='text-center bg-white p-2 rounded shadow-sm'>
-                        <div className='font-bold text-lg'>{clbLevels.secondLanguage.speaking}</div>
-                        <div className='text-xs text-gray-500'>Speaking</div>
+                  <div className="mt-4 p-3 bg-[#D8D7D6] rounded-md">
+                    <h4 className="font-medium text-black-800 mb-2">
+                      Equivalente en CLB
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">
+                          {clbLevels.secondLanguage.speaking}
+                        </div>
+                        <div className="text-xs text-gray-500">Speaking</div>
                       </div>
-                      <div className='text-center bg-white p-2 rounded shadow-sm'>
-                        <div className='font-bold text-lg'>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">
                           {clbLevels.secondLanguage.listening}
                         </div>
-                        <div className='text-xs text-gray-500'>Listening</div>
+                        <div className="text-xs text-gray-500">Listening</div>
                       </div>
-                      <div className='text-center bg-white p-2 rounded shadow-sm'>
-                        <div className='font-bold text-lg'>{clbLevels.secondLanguage.reading}</div>
-                        <div className='text-xs text-gray-500'>Reading</div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">
+                          {clbLevels.secondLanguage.reading}
+                        </div>
+                        <div className="text-xs text-gray-500">Reading</div>
                       </div>
-                      <div className='text-center bg-white p-2 rounded shadow-sm'>
-                        <div className='font-bold text-lg'>{clbLevels.secondLanguage.writing}</div>
-                        <div className='text-xs text-gray-500'>Writing</div>
+                      <div className="text-center bg-white p-2 rounded shadow-sm">
+                        <div className="font-bold text-lg">
+                          {clbLevels.secondLanguage.writing}
+                        </div>
+                        <div className="text-xs text-gray-500">Writing</div>
                       </div>
                     </div>
                   </div>
                 )}
               </Card>
 
-              <Card title='Experiencia Laboral'>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <Card title="Experiencia Laboral Calificada">
+                <p style={{ marginBottom: "30px" }}>
+                  Esta experiencia debe ser full time, paga, en un puesto
+                  calificado de TEER 0, 1, 2 o 3
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
-                    label='Experiencia Laboral Canadiense (años)'
-                    type='number'
+                    label="Experiencia Laboral Canadiense (años)"
+                    type="number"
                     min={0}
                     max={5}
                     step={1}
                     value={profile.canadianWorkExperience}
                     onChange={(e) =>
-                      handleChange('canadianWorkExperience', parseFloat(e.target.value) || 0)
+                      handleChange(
+                        "canadianWorkExperience",
+                        parseFloat(e.target.value) || 0
+                      )
                     }
                   />
 
                   <Input
-                    label='Experiencia Laboral Extranjera (años)'
-                    type='number'
+                    label="Experiencia Laboral Extranjera (años)"
+                    type="number"
                     min={0}
                     max={10}
                     step={1}
                     value={profile.foreignWorkExperience}
                     onChange={(e) =>
-                      handleChange('foreignWorkExperience', parseFloat(e.target.value) || 0)
+                      handleChange(
+                        "foreignWorkExperience",
+                        parseFloat(e.target.value) || 0
+                      )
                     }
                   />
 
-<div style={{display: 'flex', flexDirection: 'column'}}>
+                  {/* <div style={{display: 'flex', flexDirection: 'column'}}>
                   <Select
                     label='Categoría NOC'
                     value={profile.nocCategory}
@@ -2011,54 +2159,100 @@ const checkFSWEligibility = () => {
                   />
                   <p>Para saber cual es tu TEER haz <a style={{color:"blue", textDecoration: "underline"}} href='https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/find-national-occupation-code.html' target='_blank' rel="noreferrer"> Click Aqui</a></p>
                   </div>
+                 */}
                 </div>
               </Card>
 
-              {profile.maritalStatus === 'married' && (
-                <Card title='Factores del/de la Esposo(a)'>
+              {profile.maritalStatus === "married" && agregarPareja == "si" && (
+                <Card title="Factores del/de la Esposo(a)">
                   <Select
-                    label='Educacion del/de la Esposo(a)'
+                    label="Educacion del/de la Esposo(a)"
                     value={profile.spouseEducation}
-                    onChange={(e) => handleChange('spouseEducation', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("spouseEducation", e.target.value)
+                    }
                     options={[
-                      {value: 'less_than_secondary', label: 'Menos que Secundaria/Bachillerato'},
-                      {value: 'secondary', label: 'Secundaria/Bachillerato'},
-                      {value: 'one_year_post_secondary', label: 'Un año de Programa Post-Secundario'},
-                      {value: 'two_year_post_secondary', label: 'Dos Años de Programa Post-Secundarios'},
-                      {value: 'bachelors', label: "Bachelor's (Pregrado)"},
                       {
-                        value: 'two_or_more_degrees',
-                        label: 'Dos o mas años de programa(s) Post-Secundarios',
+                        value: "less_than_secondary",
+                        label:
+                          "Ninguno o menos que secundaria (escuela secundaria)",
                       },
-                      {value: 'masters', label: "Masters"},
-                      {value: 'doctoral', label: 'Doctorado (PhD)'},
+                      {
+                        value: "secondary",
+                        label:
+                          "Diploma de secundaria (graduación de escuela secundaria)",
+                      },
+                      {
+                        value: "one_year_post_secondary",
+                        label:
+                          "Programa de un año en una universidad, colegio, escuela técnica u otro instituto",
+                      },
+                      {
+                        value: "two_year_post_secondary",
+                        label:
+                          "Programa de dos años en una universidad, colegio, escuela técnica u otro instituto",
+                      },
+                      {
+                        value: "bachelors",
+                        label:
+                          "Título de licenciatura o Pregrado (programa de tres o más años en una universidad, colegio, escuela técnica u otro instituto)",
+                      },
+                      {
+                        value: "two_or_more_degrees",
+                        label:
+                          "Dos o más certificados, diplomas o títulos. Uno debe ser de un programa de tres o más años",
+                      },
+                      {
+                        value: "masters",
+                        label:
+                          "Maestría o título profesional necesario para ejercer una profesión licenciada",
+                      },
+                      {
+                        value: "doctoral",
+                        label: "Título universitario de nivel doctoral (PhD)",
+                      },
                     ]}
                   />
 
-                  <div className='mt-4'>
-                    <h4 className='font-medium mb-2'>Idioma del/de la Esposo(a)</h4>
+                  <div className="mt-4">
+                    <h4 className="font-medium mb-2">
+                      Idioma del/de la Esposo(a)
+                    </h4>
                     <Select
-                      label='Examen de Idioma'
+                      label="Examen de Idioma"
                       value={profile.spouseLanguage.test}
                       onChange={(e) => {
                         const newTest = e.target.value;
                         handleLanguageChange("spouseLanguage", "test", newTest);
-                        ["speaking", "listening", "reading", "writing"].forEach((skill) => {
-                          handleLanguageChange("spouseLanguage", skill, 0);
-                        });
+                        ["speaking", "listening", "reading", "writing"].forEach(
+                          (skill) => {
+                            handleLanguageChange("spouseLanguage", skill, 0);
+                          }
+                        );
                       }}
                       options={[
                         {
-                          value: 'IELTS',
-                          label: 'IELTS - International English Language Testing System',
+                          value: "IELTS",
+                          label:
+                            "IELTS - International English Language Testing System",
                         },
                         {
-                          value: 'CELPIP',
-                          label: 'CELPIP - Canadian English Language Proficiency Index Program',
+                          value: "CELPIP",
+                          label:
+                            "CELPIP - Canadian English Language Proficiency Index Program",
                         },
-                        { value: 'PTE', label: 'PTE Core - Pearson Test of English' },
-                        {value: 'TEF', label: "TEF - Test d'évaluation de français"},
-                        {value: 'TCF', label: 'TCF - Test de connaissance du français'},
+                        {
+                          value: "PTE",
+                          label: "PTE Core - Pearson Test of English",
+                        },
+                        {
+                          value: "TEF",
+                          label: "TEF - Test d'évaluation de français",
+                        },
+                        {
+                          value: "TCF",
+                          label: "TCF - Test de connaissance du français",
+                        },
                       ]}
                     />
 
@@ -2073,40 +2267,51 @@ const checkFSWEligibility = () => {
                     <LanguageSelectInput
                       languageTest={profile.spouseLanguage.test}
                       values={profile.spouseLanguage}
-                      onChange={(skill, value) => handleLanguageChange("spouseLanguage", skill, value)}
+                      onChange={(skill, value) =>
+                        handleLanguageChange("spouseLanguage", skill, value)
+                      }
                       crsConfig={crsConfig}
                     />
-
-
                   </div>
 
                   <Input
-                    label='Experiencia Laboral del/de la Esposo(a) (años)'
-                    type='number'
+                    label="Experiencia Laboral Canadiense del/de la Esposo(a) (años)"
+                    type="number"
                     min={0}
                     max={5}
                     step={1}
                     value={profile.spouseWorkExperience}
                     onChange={(e) =>
-                      handleChange('spouseWorkExperience', parseFloat(e.target.value) || 0)
+                      handleChange(
+                        "spouseWorkExperience",
+                        parseFloat(e.target.value) || 0
+                      )
                     }
                   />
+                  <p>
+                      Esta experiencia debe ser full time, paga, en un puesto
+                      calificado de TEER 0, 1, 2 o 3
+                    </p>
                 </Card>
               )}
 
-              <Card title='Puntos Adicionales'>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <Card title="Puntos Adicionales">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Checkbox
-                      label='Nominacion Provincial'
+                      label="Nominacion Provincial"
                       checked={profile.provincialNomination}
-                      onChange={(e) => handleChange('provincialNomination', e.target.checked)}
+                      onChange={(e) =>
+                        handleChange("provincialNomination", e.target.checked)
+                      }
                     />
 
                     <Checkbox
-                      label='Hermana/o Canadiense (Residente o Ciudadano(a))'
+                      label="Hermana/o Canadiense (Residente o Ciudadano(a))"
                       checked={profile.canadianSibling}
-                      onChange={(e) => handleChange('canadianSibling', e.target.checked)}
+                      onChange={(e) =>
+                        handleChange("canadianSibling", e.target.checked)
+                      }
                     />
 
                     {/* <Checkbox
@@ -2132,9 +2337,11 @@ const checkFSWEligibility = () => {
                     /> */}
 
                     <Checkbox
-                      label='Certificado de Trade Occupation'
+                      label="Certificado de Trade Occupation"
                       checked={profile.tradesCertification}
-                      onChange={(e) => handleChange('tradesCertification', e.target.checked)}
+                      onChange={(e) =>
+                        handleChange("tradesCertification", e.target.checked)
+                      }
                     />
                   </div>
 
@@ -2154,86 +2361,112 @@ const checkFSWEligibility = () => {
                 </div>
               </Card>
 
-              <div className='flex flex-col md:flex-row justify-between gap-4 md:gap-0 mt-6 
+              <div
+                className="flex flex-col md:flex-row justify-between gap-4 md:gap-0 mt-6 
                 fixed md:static bottom-0 left-0 w-full bg-white px-6 py-4 
-                shadow-inner z-50'>
-                <Button type='button' onClick={resetForm} className='bg-gray-600'>
+                shadow-inner z-50"
+              >
+                <Button
+                  type="button"
+                  onClick={resetForm}
+                  className="bg-gray-600"
+                >
                   Reiniciar Formulario
                 </Button>
-                <Button type='submit'>Calcular Puntaje CRS</Button>
+                <Button type="submit">Calcular Puntaje CRS</Button>
               </div>
             </form>
           ) : (
             <div>
-              <div className='bg-[#D8D7D6] border border-blue-400 text-blue-800 px-4 py-3 rounded-md mb-6'>
-                <div className='flex justify-between items-center'>
+              <div className="bg-[#D8D7D6] border border-blue-400 text-blue-800 px-4 py-3 rounded-md mb-6">
+                <div className="flex justify-between items-center">
                   <div>
-                    <h2 className='text-lg font-semibold mb-2'>Tu Puntaje CRS Es:</h2>
-                    <p className='text-3xl font-bold'>{results.totalCRSScore}</p>
+                    <h2 className="text-lg font-semibold mb-2">
+                      Tu Puntaje CRS Es:
+                    </h2>
+                    <p className="text-3xl font-bold">
+                      {results.totalCRSScore}
+                    </p>
                   </div>
-                  <Button onClick={() => { setResults(null); scrollToTop(); }} className='px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors'>
+                  <Button
+                    onClick={() => {
+                      setResults(null);
+                      scrollToTop();
+                    }}
+                    className="px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors"
+                  >
                     Calcular de Nuevo
                   </Button>
                 </div>
               </div>
 
-              <Card title='Detalles de Puntaje'>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                  <div className='bg-gray-100 p-4 rounded-md'>
-                    <p className='font-medium'>
-                      Core/Human Capital:{' '}
-                      <span className='float-right'>{results.coreHumanCapitalPoints}</span>
+              <Card title="Detalles de Puntaje">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-100 p-4 rounded-md">
+                    <p className="font-medium">
+                      Core/Human Capital:{" "}
+                      <span className="float-right">
+                        {results.coreHumanCapitalPoints}
+                      </span>
                     </p>
-                    <div className='mt-2 text-sm text-gray-600'>
+                    <div className="mt-2 text-sm text-gray-600">
                       <p>
-                        Edad: <span className='float-right'>{results.detailedBreakdown.age}</span>
+                        Edad:{" "}
+                        <span className="float-right">
+                          {results.detailedBreakdown.age}
+                        </span>
                       </p>
                       <p>
-                        Educacion:{' '}
-                        <span className='float-right'>{results.detailedBreakdown.education}</span>
+                        Educacion:{" "}
+                        <span className="float-right">
+                          {results.detailedBreakdown.education}
+                        </span>
                       </p>
                       <p>
-                        Primer Idioma:{' '}
-                        <span className='float-right'>
+                        Primer Idioma:{" "}
+                        <span className="float-right">
                           {results.detailedBreakdown.firstLanguage}
                         </span>
                       </p>
                       <p>
-                        Segundo Idioma:{' '}
-                        <span className='float-right'>
+                        Segundo Idioma:{" "}
+                        <span className="float-right">
                           {results.detailedBreakdown.secondLanguage}
                         </span>
                       </p>
                       <p>
-                        Experiencia Canadiense:{' '}
-                        <span className='float-right'>
+                        Experiencia Canadiense:{" "}
+                        <span className="float-right">
                           {results.detailedBreakdown.canadianExperience}
                         </span>
                       </p>
                     </div>
                   </div>
 
-                  <div className='bg-gray-100 p-4 rounded-md'>
-                    <p className='font-medium'>
-                      Factores del/de la Esposo(a) : <span className='float-right'>{results.spousePoints}</span>
+                  <div className="bg-gray-100 p-4 rounded-md">
+                    <p className="font-medium">
+                      Factores del/de la Esposo(a) :{" "}
+                      <span className="float-right">
+                        {results.spousePoints}
+                      </span>
                     </p>
-                    {profile.maritalStatus === 'married' && (
-                      <div className='mt-2 text-sm text-gray-600'>
+                    {profile.maritalStatus === "married" && (
+                      <div className="mt-2 text-sm text-gray-600">
                         <p>
-                          Educacion:{' '}
-                          <span className='float-right'>
+                          Educacion:{" "}
+                          <span className="float-right">
                             {results.detailedBreakdown.spouseEducation}
                           </span>
                         </p>
                         <p>
-                          Idioma:{' '}
-                          <span className='float-right'>
+                          Idioma:{" "}
+                          <span className="float-right">
                             {results.detailedBreakdown.spouseLanguage}
                           </span>
                         </p>
                         <p>
-                          Experiencia:{' '}
-                          <span className='float-right'>
+                          Experiencia:{" "}
+                          <span className="float-right">
                             {results.detailedBreakdown.spouseExperience}
                           </span>
                         </p>
@@ -2242,213 +2475,254 @@ const checkFSWEligibility = () => {
                   </div>
 
                   <div className="bg-gray-100 p-4 rounded-md">
-  <p className="font-medium">
-    Transferibilidad de Skills:{' '}
-    <span className="float-right">{results.skillTransferabilityPoints}</span>
-  </p>
-  <div className="mt-2 text-sm text-gray-600">
-    {/* Education + Language */}
-    {results.transferabilityBreakdown.eduLangPointsUsed >= 0 && (
-      <p>
-        <strong>Educacion + Idioma<br/>(CLB 7 or 9):</strong>
-        <span className="float-right">
-          {results.transferabilityBreakdown.eduLangPointsUsed} 
-        </span>
-      </p>
-    )}
+                    <p className="font-medium">
+                      Transferibilidad de Skills:{" "}
+                      <span className="float-right">
+                        {results.skillTransferabilityPoints}
+                      </span>
+                    </p>
+                    <div className="mt-2 text-sm text-gray-600">
+                      {/* Education + Language */}
+                      {results.transferabilityBreakdown.eduLangPointsUsed >=
+                        0 && (
+                        <p>
+                          <strong>
+                            Educacion + Idioma
+                            <br />
+                            (CLB 7 or 9):
+                          </strong>
+                          <span className="float-right">
+                            {results.transferabilityBreakdown.eduLangPointsUsed}
+                          </span>
+                        </p>
+                      )}
 
-    {/* Foreign Work Experience + Language */}
-    {results.transferabilityBreakdown.foreignLangPointsUsed >= 0 && (
-      <p>
-        <strong>Experiencia Extranjera + Idioma<br/>(CLB 7 or 9):</strong>
-        <span className="float-right">
-          {results.transferabilityBreakdown.foreignLangPointsUsed} 
-        </span>
-      </p>
-    )}
+                      {/* Foreign Work Experience + Language */}
+                      {results.transferabilityBreakdown.foreignLangPointsUsed >=
+                        0 && (
+                        <p>
+                          <strong>
+                            Experiencia Extranjera + Idioma
+                            <br />
+                            (CLB 7 or 9):
+                          </strong>
+                          <span className="float-right">
+                            {
+                              results.transferabilityBreakdown
+                                .foreignLangPointsUsed
+                            }
+                          </span>
+                        </p>
+                      )}
 
-    {/* Canadian Work Experience + Foreign Work Experience */}
-    {results.transferabilityBreakdown.canadianForeignExpPointsUsed >= 0 && (
-      <p>
-        <strong>Experiencia Canadiense + Experiencia Extranjera:</strong>
-        <span className="float-right">
-          {results.transferabilityBreakdown.canadianForeignExpPointsUsed} 
-        </span>
-      </p>
-    )}
+                      {/* Canadian Work Experience + Foreign Work Experience */}
+                      {results.transferabilityBreakdown
+                        .canadianForeignExpPointsUsed >= 0 && (
+                        <p>
+                          <strong>
+                            Experiencia Canadiense + Experiencia Extranjera:
+                          </strong>
+                          <span className="float-right">
+                            {
+                              results.transferabilityBreakdown
+                                .canadianForeignExpPointsUsed
+                            }
+                          </span>
+                        </p>
+                      )}
 
-    {/* Canadian Work Experience + Education */}
-    {results.transferabilityBreakdown.canadianEduExpPointsUsed >= 0 && (
-      <p>
-        <strong>Experiencia Canadiense + Educacion:</strong>
-        <span className="float-right">
-          {results.transferabilityBreakdown.canadianEduExpPointsUsed} 
-        </span>
-      </p>
-    )}
-  </div>
-</div>
+                      {/* Canadian Work Experience + Education */}
+                      {results.transferabilityBreakdown
+                        .canadianEduExpPointsUsed >= 0 && (
+                        <p>
+                          <strong>Experiencia Canadiense + Educacion:</strong>
+                          <span className="float-right">
+                            {
+                              results.transferabilityBreakdown
+                                .canadianEduExpPointsUsed
+                            }
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-<div className="bg-gray-100 p-4 rounded-md">
-  <p className="font-medium">
-    Puntos Adicionales:{' '}
-    <span className="float-right">{results.additionalPoints}</span>
-  </p>
-  <div className="mt-2 text-sm text-gray-600">
-    {/* Canadian Education */}
-    {profile.canadianEducation !== 'none' && (
-      <p>
-        <strong>Educacion Canadiense:</strong>
-        <span className="float-right">
-          {crsConfig?.additionalPoints.canadianEducation.find(
-            (e) => e.level === profile.canadianEducation
-          )?.points || 0} 
-        </span>
-      </p>
-    )}
+                  <div className="bg-gray-100 p-4 rounded-md">
+                    <p className="font-medium">
+                      Puntos Adicionales:{" "}
+                      <span className="float-right">
+                        {results.additionalPoints}
+                      </span>
+                    </p>
+                    <div className="mt-2 text-sm text-gray-600">
+                      {/* Canadian Education */}
+                      {profile.canadianEducation !== "none" && (
+                        <p>
+                          <strong>Educacion Canadiense:</strong>
+                          <span className="float-right">
+                            {crsConfig?.additionalPoints.canadianEducation.find(
+                              (e) => e.level === profile.canadianEducation
+                            )?.points || 0}
+                          </span>
+                        </p>
+                      )}
 
-    {/* Nominacion Provincial */}
-    {profile.provincialNomination && (
-      <p>
-        <strong>Nominacion Provincial:</strong>
-        <span className="float-right">
-          {crsConfig?.additionalPoints.provincialNomination} 
-        </span>
-      </p>
-    )}
+                      {/* Nominacion Provincial */}
+                      {profile.provincialNomination && (
+                        <p>
+                          <strong>Nominacion Provincial:</strong>
+                          <span className="float-right">
+                            {crsConfig?.additionalPoints.provincialNomination}
+                          </span>
+                        </p>
+                      )}
 
-    {/* Job Offer */}
-    {profile.jobOffer !== 'none' && (
-      <p>
-        <strong>Oferta de Trabajo (NOC {profile.jobOffer}):</strong>
-        <span className="float-right">
-          {profile.jobOffer === 'noc_00'
-            ? crsConfig?.additionalPoints.arrangedEmployment.noc_00
-            : profile.jobOffer === 'noc_0_A_B'
-            ? crsConfig?.additionalPoints.arrangedEmployment.noc_0_A_B
-            : 0} 
-        </span>
-      </p>
-    )}
+                      {/* Job Offer */}
+                      {profile.jobOffer !== "none" && (
+                        <p>
+                          <strong>
+                            Oferta de Trabajo (NOC {profile.jobOffer}):
+                          </strong>
+                          <span className="float-right">
+                            {profile.jobOffer === "noc_00"
+                              ? crsConfig?.additionalPoints.arrangedEmployment
+                                  .noc_00
+                              : profile.jobOffer === "noc_0_A_B"
+                              ? crsConfig?.additionalPoints.arrangedEmployment
+                                  .noc_0_A_B
+                              : 0}
+                          </span>
+                        </p>
+                      )}
 
-    {/* Canadian Sibling */}
-    {profile.canadianSibling && (
-      <p>
-        <strong>Hermano Canadiense:</strong>
-        <span className="float-right">
-          {crsConfig?.additionalPoints.canadianSibling} 
-        </span>
-      </p>
-    )}
+                      {/* Canadian Sibling */}
+                      {profile.canadianSibling && (
+                        <p>
+                          <strong>Hermano Canadiense:</strong>
+                          <span className="float-right">
+                            {crsConfig?.additionalPoints.canadianSibling}
+                          </span>
+                        </p>
+                      )}
 
-    {/* French Language */}
-    {profile.frenchOnly && (
-      <p>
-        <strong>Solo Frances (NCLC 7+):</strong>
-        <span className="float-right">
-          {crsConfig?.additionalPoints.frenchLanguage.nclc7} 
-        </span>
-      </p>
-    )}
-    {profile.frenchAndEnglish && (
-      <p>
-        <strong>Frances (NCLC 7+) e Ingles (CLB 5+):</strong>
-        <span className="float-right">
-          {crsConfig?.additionalPoints.frenchLanguage.nclc7_english_clb4} 
-        </span>
-      </p>
-    )}
+                      {/* French Language */}
+                      {profile.frenchOnly && (
+                        <p>
+                          <strong>Solo Frances (NCLC 7+):</strong>
+                          <span className="float-right">
+                            {crsConfig?.additionalPoints.frenchLanguage.nclc7}
+                          </span>
+                        </p>
+                      )}
+                      {profile.frenchAndEnglish && (
+                        <p>
+                          <strong>Frances (NCLC 7+) e Ingles (CLB 5+):</strong>
+                          <span className="float-right">
+                            {
+                              crsConfig?.additionalPoints.frenchLanguage
+                                .nclc7_english_clb4
+                            }
+                          </span>
+                        </p>
+                      )}
 
-    {/* Trades Certification */}
-    {profile.tradesCertification && (
-      <p>
-        <strong>Trades Certification:</strong>
-        <span className="float-right">
-          {crsConfig?.additionalPoints.tradesCertification} 
-        </span>
-      </p>
-    )}
-  </div>
-</div>
-
+                      {/* Trades Certification */}
+                      {profile.tradesCertification && (
+                        <p>
+                          <strong>Trades Certification:</strong>
+                          <span className="float-right">
+                            {crsConfig?.additionalPoints.tradesCertification}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </Card>
 
-              <Card title='Elegibilidad para Programas'>
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+              <Card title="Elegibilidad para Programas">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Federal Skilled Worker */}
                   <div
                     className={`p-4 rounded-md ${
                       results.eligibilityStatus.FSW
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                     }`}
                   >
-                    <h3 className='font-medium mb-2'>Federal Skilled Worker</h3>
-                    <p>{results.eligibilityStatus.FSW ? 'Elegible' : 'No Elegible'}</p>
-                    <div className='mt-2 text-sm text-gray-600'>
+                    <h3 className="font-medium mb-2">Federal Skilled Worker</h3>
+                    <p>
+                      {results.eligibilityStatus.FSW
+                        ? "Elegible"
+                        : "No Elegible"}
+                    </p>
+                    <div className="mt-2 text-sm text-gray-600">
                       {/* Verificación de elegibilidad */}
                       <p>
-                        <strong>Puntos Minimos de Lenguaje (CLB 7):</strong>{' '}
+                        <strong>Puntos Minimos de Lenguaje (CLB 7):</strong>{" "}
                         {checkLanguagePoints(
                           profile.firstLanguage.speaking,
                           profile.firstLanguage.listening,
                           profile.firstLanguage.reading,
                           profile.firstLanguage.writing ?? 0
-                        ) >= (crsConfig?.programMinimums?.FSW?.minLanguagePoints ?? 0)
-                          ? 'Cumple'
-                          : 'No Cumple'}
+                        ) >=
+                        (crsConfig?.programMinimums?.FSW?.minLanguagePoints ??
+                          0)
+                          ? "Cumple"
+                          : "No Cumple"}
                       </p>
                       <p>
-                        <strong>Educacion Minima:</strong>{' '}
+                        <strong>Educacion Minima:</strong>{" "}
                         {meetsEducationRequirement(
                           profile.education,
-                          crsConfig?.programMinimums?.FSW?.minEducation ?? ''
+                          crsConfig?.programMinimums?.FSW?.minEducation ?? ""
                         )
-                          ? 'Cumple'
-                          : 'No Cumple'}
+                          ? "Cumple"
+                          : "No Cumple"}
                       </p>
                       <p>
-                        <strong>Experiencia Minima (años):</strong>{' '}
+                        <strong>Experiencia Minima (años):</strong>{" "}
                         {profile.foreignWorkExperience >=
                         (crsConfig?.programMinimums?.FSW?.minExperience ?? 0)
-                          ? 'Cumple'
-                          : 'No Cumple'}
+                          ? "Cumple"
+                          : "No Cumple"}
                       </p>
                       <p>
-                        <strong>Puntaje CRS Minimo:</strong>{' '}
+                        <strong>Puntaje CRS Minimo:</strong>{" "}
                         {checkFSWEligibility().totalPoints >=
                         (crsConfig?.programMinimums?.FSW?.minPoints ?? 0)
-                          ? 'Cumple'
-                          : 'No Cumple'}
+                          ? "Cumple"
+                          : "No Cumple"}
                       </p>
 
                       {/* Valores de comparación impresos */}
-                      <div className='mt-4 text-sm text-gray-500'>
+                      <div className="mt-4 text-sm text-gray-500">
                         <p>
                           <strong>Comparacion:</strong>
                         </p>
                         <p>
-                          Puntos de Idioma:{' '}
+                          Puntos de Idioma:{" "}
                           {checkLanguagePoints(
                             profile.firstLanguage.speaking,
                             profile.firstLanguage.listening,
                             profile.firstLanguage.reading,
                             profile.firstLanguage.writing ?? 0
-                          )}{' '}
-                          vs {crsConfig?.programMinimums?.FSW?.minLanguagePoints ?? 0}
+                          )}{" "}
+                          vs{" "}
+                          {crsConfig?.programMinimums?.FSW?.minLanguagePoints ??
+                            0}
                         </p>
                         <p>
-                          Educacion: {profile.education} vs{' '}
+                          Educacion: {profile.education} vs{" "}
                           {crsConfig?.programMinimums?.FSW?.minEducation}
                         </p>
                         <p>
-                          Experiencia: {profile.foreignWorkExperience} vs{' '}
+                          Experiencia: {profile.foreignWorkExperience} vs{" "}
                           {crsConfig?.programMinimums?.FSW?.minExperience ?? 0}
                         </p>
                         <p>
-                          Puntos FSW Core: {checkFSWEligibility().totalPoints} vs{' '}
-                          {crsConfig?.programMinimums?.FSW?.minPoints ?? 0}
+                          Puntos FSW Core: {checkFSWEligibility().totalPoints}{" "}
+                          vs {crsConfig?.programMinimums?.FSW?.minPoints ?? 0}
                         </p>
                       </div>
                     </div>
@@ -2458,79 +2732,98 @@ const checkFSWEligibility = () => {
                   <div
                     className={`p-4 rounded-md ${
                       results.eligibilityStatus.CEC
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                     }`}
                   >
-                    <h3 className='font-medium mb-2'>Canadian Experience Class</h3>
-                    <p>{results.eligibilityStatus.CEC ? 'Elegible' : 'No Elegible'}</p>
-                    <div className='mt-2 text-sm text-gray-600'>
+                    <h3 className="font-medium mb-2">
+                      Canadian Experience Class
+                    </h3>
+                    <p>
+                      {results.eligibilityStatus.CEC
+                        ? "Elegible"
+                        : "No Elegible"}
+                    </p>
+                    <div className="mt-2 text-sm text-gray-600">
                       {/* Verificación de elegibilidad */}
                       <p>
-                        <strong>Puntos Minimos de Idioma (NOC 0, A):</strong>{' '}
+                        <strong>Puntos Minimos de Idioma (NOC 0, A):</strong>{" "}
                         {checkLanguagePoints(
                           profile.firstLanguage.speaking,
                           profile.firstLanguage.listening,
                           profile.firstLanguage.reading,
                           profile.firstLanguage.writing ?? 0
-                        ) >= (crsConfig?.programMinimums?.CEC?.minLanguagePoints?.NOC_0_A ?? 0)
-                          ? 'Cumple'
-                          : 'No Cumple'}
+                        ) >=
+                        (crsConfig?.programMinimums?.CEC?.minLanguagePoints
+                          ?.NOC_0_A ?? 0)
+                          ? "Cumple"
+                          : "No Cumple"}
                       </p>
                       <p>
-                        <strong>Puntos Minimos de Idioma (NOC B):</strong>{' '}
+                        <strong>Puntos Minimos de Idioma (NOC B):</strong>{" "}
                         {checkLanguagePoints(
                           profile.firstLanguage.speaking,
                           profile.firstLanguage.listening,
                           profile.firstLanguage.reading,
                           profile.firstLanguage.writing ?? 0
-                        ) >= (crsConfig?.programMinimums?.CEC?.minLanguagePoints?.NOC_B ?? 0)
-                          ? 'Cumple'
-                          : 'No Cumple'}
+                        ) >=
+                        (crsConfig?.programMinimums?.CEC?.minLanguagePoints
+                          ?.NOC_B ?? 0)
+                          ? "Cumple"
+                          : "No Cumple"}
                       </p>
                       <p>
-                        <strong>Minimo de Experiencia Canadiense (años):</strong>{' '}
+                        <strong>
+                          Minimo de Experiencia Canadiense (años):
+                        </strong>{" "}
                         {profile.canadianWorkExperience >=
-                        (crsConfig?.programMinimums?.CEC?.minCanadianExperience ?? 0)
-                          ? 'Cumple'
-                          : 'No Cumple'}
+                        (crsConfig?.programMinimums?.CEC
+                          ?.minCanadianExperience ?? 0)
+                          ? "Cumple"
+                          : "No Cumple"}
                       </p>
 
                       {/* Valores de comparación impresos */}
-                      <div className='mt-4 text-sm text-gray-500'>
+                      <div className="mt-4 text-sm text-gray-500">
                         <p>
                           <strong>Comparacion:</strong>
                         </p>
                         <p>
-                          Puntos Minimos de Idioma (NOC 0, A):{' '}
+                          Puntos Minimos de Idioma (NOC 0, A):{" "}
                           {checkLanguagePoints(
                             profile.firstLanguage.speaking,
                             profile.firstLanguage.listening,
                             profile.firstLanguage.reading,
                             profile.firstLanguage.writing ?? 0
-                          )}{' '}
-                          vs {crsConfig?.programMinimums?.CEC?.minLanguagePoints?.NOC_0_A ?? 0}
+                          )}{" "}
+                          vs{" "}
+                          {crsConfig?.programMinimums?.CEC?.minLanguagePoints
+                            ?.NOC_0_A ?? 0}
                         </p>
                         <p>
-                          Puntos Minimos de Idioma (NOC B):{' '}
+                          Puntos Minimos de Idioma (NOC B):{" "}
                           {checkLanguagePoints(
                             profile.firstLanguage.speaking,
                             profile.firstLanguage.listening,
                             profile.firstLanguage.reading,
                             profile.firstLanguage.writing ?? 0
-                          )}{' '}
-                          vs {crsConfig?.programMinimums?.CEC?.minLanguagePoints?.NOC_B ?? 0}
+                          )}{" "}
+                          vs{" "}
+                          {crsConfig?.programMinimums?.CEC?.minLanguagePoints
+                            ?.NOC_B ?? 0}
                         </p>
                         <p>
-                          Experiencia Canadiense: {profile.canadianWorkExperience} vs{' '}
-                          {crsConfig?.programMinimums?.CEC?.minCanadianExperience ?? 0}
+                          Experiencia Canadiense:{" "}
+                          {profile.canadianWorkExperience} vs{" "}
+                          {crsConfig?.programMinimums?.CEC
+                            ?.minCanadianExperience ?? 0}
                         </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Federal Skilled Trades */}
-                  <div
+                  {/* <div
                     className={`p-4 rounded-md ${
                       results.eligibilityStatus.FST
                         ? 'bg-green-100 text-green-800'
@@ -2540,7 +2833,6 @@ const checkFSWEligibility = () => {
                     <h3 className='font-medium mb-2'>Federal Skilled Trades</h3>
                     <p>{results.eligibilityStatus.FST ? 'Elegible' : 'No Elegible'}</p>
                     <div className='mt-2 text-sm text-gray-600'>
-                      {/* Verificación de elegibilidad */}
                       <p>
                         <strong>Puntaje Minimo en Speaking (CLB 5):</strong>{' '}
                         {checkLanguagePoints(
@@ -2581,7 +2873,6 @@ const checkFSWEligibility = () => {
                           : 'No Cumple'}
                       </p>
 
-                      {/* Valores de comparación impresos */}
                       <div className='mt-4 text-sm text-gray-500'>
                         <p>
                           <strong>Comparacion:</strong>
@@ -2614,63 +2905,108 @@ const checkFSWEligibility = () => {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
+                  {/* French Language Proficiency */}
                   {/* French Language Proficiency */}
                   <div
                     className={`p-4 rounded-md ${
                       results.eligibilityStatus.frenchLanguageProficiency
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                     }`}
                   >
-                    <h3 className='font-medium mb-2'>French Language Proficiency</h3>
+                    <h3 className="font-medium mb-2">
+                      French Language Proficiency
+                    </h3>
                     <p>
                       {results.eligibilityStatus.frenchLanguageProficiency
-                        ? 'Elegible'
-                        : 'No Elegible'}
+                        ? "Elegible"
+                        : "No Elegible"}
                     </p>
-                  </div>
+                    <div className="mt-2 text-sm text-gray-600">
+                      <p>
+                        <strong>Puntaje Mínimo en Francés (NCLC 7):</strong>{" "}
+                        {meetsFrenchCLB7 ? "Cumple" : "No Cumple"}
+                      </p>
+                      <p>
+                        <strong>Elegible a FSW, CEC o FST:</strong>{" "}
+                        {results.eligibilityStatus.FSW ||
+                        results.eligibilityStatus.CEC ||
+                        results.eligibilityStatus.FST
+                          ? "Cumple"
+                          : "No Cumple"}
+                      </p>
 
+                      {/* Comparaciones */}
+                      <div className="mt-4 text-sm text-gray-500">
+                        <p>
+                          <strong>Comparacion:</strong>
+                        </p>
+                        <p>
+                          Francés: Speaking {clbLevels.secondLanguage.speaking},
+                          Listening {clbLevels.secondLanguage.listening},
+                          Reading {clbLevels.secondLanguage.reading}, Writing{" "}
+                          {clbLevels.secondLanguage.writing} vs NCLC 7
+                        </p>
+                        <p>
+                          Programas Base: FSW:{" "}
+                          {results.eligibilityStatus.FSW ? "✔️" : "❌"}, CEC:{" "}
+                          {results.eligibilityStatus.CEC ? "✔️" : "❌"}, FST:{" "}
+                          {results.eligibilityStatus.FST ? "✔️" : "❌"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </Card>
 
-              <Card title='Comparación de Puntaje Obtenido con los ultimos Draws'>
-                <div className='overflow-x-auto'>
-                  <table className='min-w-full divide-y divide-gray-200'>
-                    <thead className='bg-gray-50'>
+              <Card title="Comparación de Puntaje Obtenido con los ultimos Draws">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                       <tr>
-                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Programa
                         </th>
-                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Puntaje Requerido
                         </th>
-                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Puntaje Calculado
                         </th>
-                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Diferencia
                         </th>
                       </tr>
                     </thead>
-                    <tbody className='bg-white divide-y divide-gray-200'>
-                      {Object.entries(results.scoreComparison).map(([program, difference]) => (
-                        <tr key={program}>
-                          <td className='px-6 py-4 whitespace-nowrap'>{program}</td>
-                          <td className='px-6 py-4 whitespace-nowrap'>
-                            {(crsConfig?.cutOffScores as any)[program]}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap'>{results.totalCRSScore}</td>
-                          <td
-                            className={`px-6 py-4 whitespace-nowrap font-medium ${
-                              Number(difference) >= 0 ? 'text-green-600' : 'text-red-600'
-                            }`}
-                          >
-                            {Number(difference) >= 0 ? `+${difference}` : difference}
-                          </td>
-                        </tr>
-                      ))}
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {Object.entries(results.scoreComparison).map(
+                        ([program, difference]) => (
+                          <tr key={program}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {program}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {(crsConfig?.cutOffScores as any)[program]}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {results.totalCRSScore}
+                            </td>
+                            <td
+                              className={`px-6 py-4 whitespace-nowrap font-medium ${
+                                Number(difference) >= 0
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {Number(difference) >= 0
+                                ? `+${difference}`
+                                : difference}
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -2689,8 +3025,14 @@ const checkFSWEligibility = () => {
                 />
               )}
 
-              <div className='mt-6'>
-                <Button onClick={() => { setResults(null); scrollToTop(); }} className='px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors'>
+              <div className="mt-6">
+                <Button
+                  onClick={() => {
+                    setResults(null);
+                    scrollToTop();
+                  }}
+                  className="px-4 py-2 bg-[#262628] text-white rounded-md hover:bg-[#3a3a3d] focus:outline-none focus:ring-2 focus:ring-[#262628] focus:ring-opacity-50 transition-colors"
+                >
                   Ajustar Perfil y Recalcular
                 </Button>
               </div>
@@ -2699,7 +3041,7 @@ const checkFSWEligibility = () => {
         </div>
       </div>
     </div>
-  )
+  );
 };
 
 export default CRSCalculator;
