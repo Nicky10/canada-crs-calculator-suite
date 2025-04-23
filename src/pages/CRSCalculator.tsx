@@ -1912,7 +1912,11 @@ const checkFSWEligibility = () => {
                     options={[
                       {
                         value: "none",
-                        label: "Secundaria (escuela secundaria) o menos",
+                        label: "Ninguna",
+                      },
+                      {
+                        value: "none",
+                        label: "Secundaria",
                       },
                       {
                         value: "one_or_two_year",
