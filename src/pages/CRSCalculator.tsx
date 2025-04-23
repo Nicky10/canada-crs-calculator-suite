@@ -690,7 +690,7 @@ if (frenchScore && (!englishScore || englishScore < 5)) {
   if (eligiblePrograms.length > 0) {
     recommendations.push({
       title: "Revisión Previa",
-      description: "Tienes tus documentos listos? Asegura tu aplicación con nuestro servicio de revisión previa.",
+      description: "¿Tienes tus documentos listos? Asegura tu aplicación con nuestro servicio de revisión previa.",
       icon: <FileCheck className="h-6 w-6" />,
       link: "https://en.immilandcanada.com/migration/revision-previa-a-envio"
     });
