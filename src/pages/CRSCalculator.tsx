@@ -760,6 +760,106 @@ const CRSCalculator = () => {
   const topRef = React.useRef<HTMLDivElement>(null);
   const [agregarPareja, setAgregarPareja] = useState("no");
 
+  type CutOffScores = {
+    FSW: number | null;
+    CEC: number | null;
+    FST: number | null;
+    PNP: number | null;
+    FLP: number | null;
+    General: number | null;
+  };
+  
+  const [cutOffScores, setCutOffScores] = useState<CutOffScores>({
+    FSW: null,
+    CEC: null,
+    FST: null,
+    PNP: null,
+    FLP: null,
+    General: null,
+  });
+
+  useEffect(() => {
+    const getLatestCutOffScores = (rounds: any[]): CutOffScores => {
+      const scores: CutOffScores = {
+        FSW: null,
+        CEC: null,
+        FST: null,
+        PNP: null,
+        FLP: null,
+        General: null,
+      };
+
+      for (const round of rounds) {
+        const name = round.drawName.toLowerCase();
+        const text = round.drawText2.toLowerCase();
+        const crs = parseInt(round.drawCRS);
+        if (isNaN(crs)) continue;
+    
+        // FLP: French language proficiency
+        if (name.includes('french language proficiency') && scores.FLP === null) {
+          scores.FLP = crs;
+          continue;
+        }
+    
+        // PNP: Provincial Nominee Program
+        if (name.includes('provincial nominee program') && scores.PNP === null) {
+          scores.PNP = crs;
+          continue;
+        }
+    
+        // FST: buscar "occupations" en drawName o drawText2
+        if ((name.includes('occupations') || text.includes('occupations')) && scores.FST === null) {
+          scores.FST = crs;
+          continue;
+        }
+    
+        // General: debe incluir los tres programas
+        if (
+          name.includes('general') &&
+          scores.General === null
+        ) {
+          scores.General = crs;
+          continue;
+        }
+    
+        // FSW: solo si es exclusivo
+        if (
+          text.includes('federal skilled worker') &&
+          !text.includes('canadian experience class') &&
+          !text.includes('federal skilled trades') &&
+          scores.FSW === null
+        ) {
+          scores.FSW = crs;
+          continue;
+        }
+    
+        // CEC: solo si es exclusivo
+        if (
+          text.includes('canadian experience class') &&
+          !text.includes('federal skilled worker') &&
+          !text.includes('federal skilled trades') &&
+          scores.CEC === null
+        ) {
+          scores.CEC = crs;
+          continue;
+        }
+    
+        if (Object.values(scores).every((v) => v !== null)) break;
+      }
+      console.log(scores)
+      return scores;
+    }
+
+    fetch('https://www.canada.ca/content/dam/ircc/documents/json/ee_rounds_123_en.json')
+      .then((res) => res.json())
+      .then((data) => {
+        const scores = getLatestCutOffScores(data.rounds);
+        setCutOffScores(scores);
+      })
+      .catch((err) => console.error('Failed to fetch cut-off scores:', err));
+  }, []);
+
+
 useEffect(() => {
   console.log("Valor de agregarPareja cambió:", agregarPareja);
   // Puedes poner aquí lógica condicional o actualizaciones relacionadas
@@ -1166,8 +1266,8 @@ const checkFSWEligibility = () => {
     cutOffScores: {
       FSW: 489,
       CEC: 521,
-      FST: 436,
-      PNP: 736,
+      FST: 463,
+      PNP: 764,
       FLP: 379,
       General: 529
     }
@@ -1180,6 +1280,26 @@ const checkFSWEligibility = () => {
           setCRSConfig(initialCRSConfig);
       };
       loadConfig();
+    }, []);
+
+    useEffect(() => {
+      const handleScroll = () => {
+        const iframeWindow = window.parent;
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight;
+        const clientHeight = document.documentElement.clientHeight;
+    
+        if (scrollTop + clientHeight >= scrollHeight) {
+          // Envía un mensaje al padre para permitir el scroll
+          iframeWindow.postMessage("scrollToParent", "*");
+        }
+      };
+    
+      window.addEventListener("scroll", handleScroll);
+    
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+      };
     }, []);
 
   // Calculate CLB levels whenever language scores change
@@ -1593,17 +1713,17 @@ const checkFSWEligibility = () => {
 
       // Eligibility for French-Language Proficiency
 
-      eligibilityStatus.frenchLanguageProficiency = frenchLanguageProficiencyEligible && (eligibilityStatus.FSW || eligibilityStatus.CEC);
+      eligibilityStatus.frenchLanguageProficiency = frenchLanguageProficiencyEligible && (eligibilityStatus.FSW || eligibilityStatus.CEC || eligibilityStatus.FST);
 
       
       // Compare scores to cut-offs
       const scoreComparison = {
-        FSW: totalCRSScore - crsConfig.cutOffScores.FSW,
-        CEC: totalCRSScore - crsConfig.cutOffScores.CEC,
-        FST: totalCRSScore - crsConfig.cutOffScores.FST,
-        PNP: totalCRSScore - crsConfig.cutOffScores.PNP,
-        FLP : totalCRSScore - crsConfig.cutOffScores.FLP,
-        General: totalCRSScore - crsConfig.cutOffScores.General
+        FSW: totalCRSScore - cutOffScores.FSW,
+        CEC: totalCRSScore - cutOffScores.CEC,
+        FST: totalCRSScore - cutOffScores.FST,
+        PNP: totalCRSScore - cutOffScores.PNP,
+        FLP : totalCRSScore - cutOffScores.FLP,
+        General: totalCRSScore - cutOffScores.General
       };
       
       // Set the results
@@ -1775,13 +1895,18 @@ const checkFSWEligibility = () => {
         <div className="bg-white shadow-md rounded-lg p-6 mb-6 pb-40">
           <div className="flex justify-between items-start mb-4">
             <div className="space-y-2">
-              <div>
+              <div className='flex justify-between items-center'>
                 <h1 className="text-2xl font-bold text-gray-800">
                   Calculadora CRS Express Entry
                 </h1>
+                <img
+              src={flagImage}
+              alt="Bandera de Canadá"
+              className="w-32 h-auto ml-4"
+            />
               </div>
               <div>
-                <p className="text-sm text-gray-500 leading-relaxed">
+                <p className="text-sm text-gray-500 leading-relaxed text-justify">
                   <span className="font-medium">Aviso:</span> Esta calculadora es una herramienta orientativa diseñada únicamente con fines informativos. 
                   Los resultados que proporciona son estimaciones basadas en las regulaciones de inmigración canadienses vigentes y están 
                   sujetos a cambios sin previo aviso. Estos resultados no deben ser considerados como oficiales ni vinculantes.
@@ -1801,11 +1926,7 @@ const checkFSWEligibility = () => {
               </div>
             </div>
 
-            <img
-              src={flagImage}
-              alt="Bandera de Canadá"
-              className="w-32 h-auto ml-4"
-            />
+            
           </div>
 
           {error && (
