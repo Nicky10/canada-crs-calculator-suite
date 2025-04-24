@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Book, GraduationCap, FileCheck, Users, Award, Calculator, BookOpen } from "lucide-react";
+import * as cheerio from 'cheerio';
+import axios from 'axios';
+import type { AnyNode } from 'domhandler';
+
 import { Link } from "react-router-dom"
 import {
   CardContent,
@@ -285,6 +289,10 @@ interface CRSConfig {
       foreignExperience: { canadianYears: number, foreignYears: number, points: number }[];
       educationCombination: { canadianYears: number, level: string, points: number }[];
     };
+    tradesCertification: {
+      clb5: number;
+      clb7: number;
+    };
   };
   additionalPoints: {
     canadianEducation: { level: string, points: number }[];
@@ -299,7 +307,6 @@ interface CRSConfig {
       nclc7: number;
       nclc7_english_clb4: number;
     };
-    tradesCertification: number;
   };
   programMinimums: {
     FSW: {
@@ -324,14 +331,6 @@ interface CRSConfig {
       };
       minExperience: number;
     };
-  };
-  cutOffScores: {
-    FSW: number;
-    CEC: number;
-    FST: number;
-    PNP: number;
-    FLP: number;
-    General: number;
   };
 }
 
@@ -860,6 +859,630 @@ const CRSCalculator = () => {
   }, []);
 
 
+  const url = 'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html';
+  
+
+  function extractTableData($: cheerio.CheerioAPI, table: cheerio.Cheerio<AnyNode>) {
+    const rows = table.find('tbody tr');
+    const data: { label: string; values: string[] }[] = [];
+  
+    rows.each((_, row) => {
+      const cols = $(row).find('td');
+      const label = $(cols[0]).text().trim();
+      const values = [...cols]
+        .slice(1)
+        .map((td) => $(td).text().trim().replace(/\u00a0/g, ' ')); // reemplazo de &nbsp;
+  
+      data.push({ label, values });
+    });
+  
+    return data;
+  }
+
+  (async () => {
+    const { data: html } = await axios.get(url);
+    const $ = cheerio.load(html);
+  
+    const findTablesFromDetails = (id: string): cheerio.Cheerio<AnyNode>[] => {
+      const section = $(`#${id}`).nextAll('details').first();
+      const tables: cheerio.Cheerio<AnyNode>[] = [];
+      section.find('table').each((_, table) => {
+        tables.push($(table));
+      });
+      return tables;
+    };
+
+  // Core/human capital factors
+  const coreTables = findTablesFromDetails('core');
+  const coreHumanCapital = {
+    age: extractTableData($, coreTables[0]),
+    education: extractTableData($, coreTables[1]),
+    firstLanguage: extractTableData($, coreTables[2]),
+    secondLanguage: extractTableData($, coreTables[3]),
+    canadianExperience: extractTableData($, coreTables[4]),
+  };
+
+  // Spouse or common-law partner factors
+  const spouseTables = findTablesFromDetails('spouse');
+  const spouseFactors = {
+    education: extractTableData($, spouseTables[0]),
+    language: extractTableData($, spouseTables[1]),
+    canadianExperience: extractTableData($, spouseTables[2]),
+  };
+
+  // Skill transferability factors
+  const skillTables = findTablesFromDetails('skill');
+  const skillTransferability = {
+    educationCLB: extractTableData($, skillTables[0]),
+    educationWork: extractTableData($, skillTables[1]),
+    foreignExpCLB: extractTableData($, skillTables[2]),
+    foreignExpWork: extractTableData($, skillTables[3]),
+    certificate: extractTableData($, skillTables[4]),
+  };
+
+  // Additional points
+  const extraTables = findTablesFromDetails('extra');
+  const additionalPoints = extractTableData($, extraTables[0]);
+
+  // Output JSON structure
+  const crsConfig = {
+    coreHumanCapital,
+    spouseFactors,
+    skillTransferability,
+    additionalPoints,
+  };
+
+  console.log(crsConfig, { depth: null });
+})();
+
+function expandAgeLabel(label: string): number[] {
+  if (label.includes('to')) {
+    const [start, end] = label.match(/\d+/g)!.map(Number);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }
+  if (label.includes('or less')) return [17];
+  if (label.includes('or more')) return [45];
+  const match = label.match(/\d+/);
+  return match ? [parseInt(match[0])] : [];
+}
+
+function normalizeEducation(label: string): string {
+  if (/less than|none/i.test(label)) return 'less_than_secondary';
+  if (/secondary/i.test(label)) return 'secondary';
+  if (/one[- ]year/i.test(label)) return 'one_year_post_secondary';
+  if (/two[- ]year/i.test(label)) return 'two_year_post_secondary';
+  if (/bachelor/i.test(label)) return 'bachelors';
+  if (/two or more certificates|degrees/i.test(label)) return 'two_or_more_degrees';
+  if (/master|professional/i.test(label)) return 'masters';
+  if (/doctoral|phd/i.test(label)) return 'doctoral';
+  return 'unknown';
+}
+
+function expandCLBLabel(label: string): number[] {
+  if (label.match(/\d+\s*or more/)) {
+    const val = parseInt(label.match(/\d+/)![0]);
+    return [val, 10];
+  } else if (label.match(/less than CLB\s*\d+/i)) {
+    const max = parseInt(label.match(/\d+/)![0]);
+    return Array.from({ length: max - 1 }, (_, i) => i + 1);
+  } else if (label.match(/CLB\s*\d+\s*or less/)) {
+    const max = parseInt(label.match(/\d+/)![0]);
+    return Array.from({ length: max }, (_, i) => i + 1);
+  } else if (label.match(/CLB\s*\d+\s*or more/)) {
+    const val = parseInt(label.match(/\d+/)![0]);
+    return [val, 10];
+  } else if (label.includes('to')) {
+    const [start, end] = label.match(/\d+/g)!.map(Number);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  } else if (label.includes('or')) {
+    return label.match(/\d+/g)!.map(Number);
+  } else {
+    const single = label.match(/\d+/);
+    return single ? [parseInt(single[0])] : [];
+  }
+}
+
+function extractCLBFromLabel(label: string): number[] {
+  return expandCLBLabel(label);
+}
+
+function parseCLBPointsToSkillBased(clbData: any[], skill: string) {
+  const clbMap: any = { skill };
+  clbData.forEach((row: any) => {
+    const clbs = extractCLBFromLabel(row.label);
+    clbs.forEach(clb => {
+      clbMap[`clb${clb}`] = parseInt(row.values[1]);
+    });
+  });
+  return clbMap;
+}
+
+function parseCLBPointsToSkillBasedWithSpouse(clbData: any[], skill: string) {
+  const clbMap: any = { skill };
+  clbData.forEach((row: any) => {
+    const clbs = extractCLBFromLabel(row.label);
+    clbs.forEach(clb => {
+      clbMap[`clb${clb}`] = parseInt(row.values[0]);
+    });
+  });
+  return clbMap;
+}
+
+function parseSpouseCLBPointsToSkills(clbData: any[], skill: string) {
+  const clbMap: any = { skill };
+  clbData.forEach((row: any) => {
+    const clbs = extractCLBFromLabel(row.label);
+    clbs.forEach(clb => {
+      clbMap[`clb${clb}`] = parseInt(row.values[0]);
+    });
+  });
+  return clbMap;
+}
+
+function generateLanguagePoints(first: any[], second: any[], spouse: any[]) {
+  const skills = ['speaking', 'listening', 'reading', 'writing'];
+
+  return {
+    firstLanguage: {
+      clbConversion: {
+        IELTS: [
+          { skill: 'reading', values: [0, 3.5, 4.0, 5.0, 6.0, 6.5, 7.0, 8.0], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'writing', values: [0, 4.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'listening', values: [0, 4.5, 5.0, 5.5, 6.0, 7.5, 8.0, 8.5], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'speaking', values: [0, 4.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5], clb: [0, 4, 5, 6, 7, 8, 9, 10] }
+        ],
+        CELPIP: [
+          { skill: 'reading', values: [0, 4, 5, 6, 7, 8, 9, 10], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'writing', values: [0, 4, 5, 6, 7, 8, 9, 10], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'listening', values: [0, 4, 5, 6, 7, 8, 9, 10], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'speaking', values: [0, 4, 5, 6, 7, 8, 9, 10], clb: [0, 4, 5, 6, 7, 8, 9, 10] }
+        ],
+        TEF: [
+          { skill: 'reading', values: [0, 306, 352, 393, 434, 462, 503, 546], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'writing', values: [0, 268, 330, 379, 428, 472, 512, 558], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'listening', values: [0, 306, 352, 393, 434, 462, 503, 546], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'speaking', values: [0, 328, 387, 422, 456, 494, 518, 556], clb: [0, 4, 5, 6, 7, 8, 9, 10] }
+        ],
+        TCF: [
+          { skill: 'reading', values: [0, 342, 375, 406, 453, 499, 524, 549], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'writing', values: [0, 4, 6, 7, 10, 12, 14, 16], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'listening', values: [0, 331, 369, 398, 458, 503, 523, 549], clb: [0, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'speaking', values: [0, 4, 6, 7, 10, 12, 14, 16], clb: [0, 4, 5, 6, 7, 8, 9, 10] }
+        ],
+        PTE: [
+          { skill: 'listening', values: [18, 28, 39, 50, 60, 71, 82, 89], clb: [3, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'reading', values: [24, 33, 42, 51, 60, 69, 78, 88], clb: [3, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'speaking', values: [34, 42, 51, 59, 68, 76, 84, 89], clb: [3, 4, 5, 6, 7, 8, 9, 10] },
+          { skill: 'writing', values: [32, 41, 51, 60, 69, 79, 88, 90], clb: [3, 4, 5, 6, 7, 8, 9, 10] }
+        ]
+      },
+      points: skills.map(skill => parseCLBPointsToSkillBased(first, skill)),
+      pointsWithSpouse: skills.map(skill => parseCLBPointsToSkillBasedWithSpouse(first, skill)),
+      spousePoints: skills.map(skill => parseSpouseCLBPointsToSkills(spouse, skill))
+    },
+    secondLanguage: {
+      points: skills.map(skill => parseCLBPointsToSkillBased(second, skill))
+    }
+  };
+}
+
+function parseExperiencePoints(coreExp: any[], spouseExp: any[]): any {
+  const foreign = [
+    { years: 0, withSpouse: 0, withoutSpouse: 0 },
+    { years: 1, withSpouse: 13, withoutSpouse: 25 },
+    { years: 2, withSpouse: 25, withoutSpouse: 50 },
+    { years: 3, withSpouse: 38, withoutSpouse: 75 },
+  ];
+
+  const canadian = coreExp.map((row: any) => {
+    const yearMatch = row.label.match(/(\d+)/);
+    const years = yearMatch ? parseInt(yearMatch[1]) : 0;
+    return {
+      years,
+      withSpouse: parseInt(row.values[0]),
+      withoutSpouse: parseInt(row.values[1])
+    };
+  });
+
+  const spouseExperience = spouseExp.map((row: any) => {
+    const yearMatch = row.label.match(/(\d+)/);
+    const years = yearMatch ? parseInt(yearMatch[1]) : 0;
+    return {
+      years,
+      points: parseInt(row.values[0])
+    };
+  });
+
+  return {
+    foreign,
+    canadian,
+    spouseExperience
+  };
+}
+
+function parseTransferabilityPoints(skill: any) {
+  const labelsMap: Record<string, string> = {
+    'Secondary school (high school) credential or less': 'secondary',
+    'Post-secondary program credential of one year or longer': 'one_year_post_secondary',
+    'Two or more post-secondary program credentials AND at least one of these credentials was issued on completion of a post-secondary program of three years or longer': 'two_or_more_degrees',
+    "A university-level credential at the master's level or at the level of an entry-to-practice professional degree for an occupation listed in the National Occupational Classification matrix at Skill Level A for which licensing by a provincial regulatory body is required": 'masters',
+    'A university-level credential at the doctoral level': 'doctoral'
+  };
+
+  const education = {
+    clb7: skill.educationCLB.map((row: any) => ({
+      level: labelsMap[row.label] || 'unknown',
+      points: parseInt(row.values[0])
+    })),
+    clb9: skill.educationCLB.map((row: any) => ({
+      level: labelsMap[row.label] || 'unknown',
+      points: parseInt(row.values[1])
+    })),
+  };
+
+  const foreignWorkExperience = {
+    clb7: [
+      { years: 1, points: parseInt(skill.foreignExpCLB[1].values[0]) },
+      { years: 2, points: parseInt(skill.foreignExpCLB[1].values[0]) },
+      { years: 3, points: parseInt(skill.foreignExpCLB[2].values[0]) }
+    ],
+    clb9: [
+      { years: 1, points: parseInt(skill.foreignExpCLB[1].values[1]) },
+      { years: 2, points: parseInt(skill.foreignExpCLB[1].values[1]) },
+      { years: 3, points: parseInt(skill.foreignExpCLB[2].values[1]) }
+    ]
+  };
+
+  const canadianWorkExperience = {
+    foreignExperience: skill.foreignExpWork.flatMap((row: any) => {
+      const years = row.label.includes('3') ? 3 : row.label.includes('2') ? 2 : 1;
+      return [1, 2].map(canadianYears => ({
+        canadianYears,
+        foreignYears: years,
+        points: parseInt(row.values[canadianYears - 1])
+      }));
+    }),
+    educationCombination: skill.educationWork.flatMap((row: any) => {
+      const level = labelsMap[row.label] || 'unknown';
+      return [1, 2].map(canadianYears => ({
+        canadianYears,
+        level,
+        points: parseInt(row.values[canadianYears - 1])
+      }));
+    })
+  };
+
+  const tradesCertification = {
+    clb5: skill.certificate?.[0]?.values?.[0] ? parseInt(skill.certificate[0].values[0]) : 0,
+    clb7: skill.certificate?.[0]?.values?.[1] ? parseInt(skill.certificate[0].values[1]) : 0
+  };
+
+  return {
+    education,
+    foreignWorkExperience,
+    canadianWorkExperience,
+    tradesCertification
+  };
+}
+
+
+
+function parseAdditionalPoints(extra: any[]) {
+  const points: any = {
+    canadianEducation: [],
+    provincialNomination: 0,
+    arrangedEmployment: {
+      noc_00: 0,
+      noc_0_A_B: 0,
+      other: 0
+    },
+    canadianSibling: 0,
+    frenchLanguage: {
+      nclc7: 0,
+      nclc7_english_clb4: 0
+    }
+  };
+
+  extra.forEach(row => {
+    const label = row.label.toLowerCase();
+    const val = parseInt(row.values[0]);
+
+    if (label.includes('brother or sister')) points.canadianSibling = val;
+    else if (label.includes('post-secondary education in canada') && label.includes('one or two')) points.canadianEducation.push({ level: 'one_or_two_year', points: val });
+    else if (label.includes('post-secondary education in canada') && label.includes('three') || label.includes('master')) points.canadianEducation.push({ level: 'three_year_or_masters', points: val });
+    else if (label.includes('doctoral')) points.canadianEducation.push({ level: 'doctoral', points: val });
+    else if (label.includes('provincial or territorial nomination')) points.provincialNomination = val;
+    else if (label.includes('certificate of qualification')) points.tradesCertification = val;
+    else if (label.includes('french') && label.includes('clb 4 or lower')) points.frenchLanguage.nclc7 = val;
+    else if (label.includes('french') && label.includes('clb 5 or higher')) points.frenchLanguage.nclc7_english_clb4 = val;
+  });
+
+  return points;
+}
+
+function parseProgramMinimums() {
+  return {
+    FSW: {
+      minLanguagePoints: 7,
+      minEducation: 'secondary',
+      minExperience: 1,
+      minPoints: 67
+    },
+    CEC: {
+      minLanguagePoints: {
+        NOC_0_A: 7,
+        NOC_B: 5
+      },
+      minCanadianExperience: 1
+    },
+    FST: {
+      minLanguagePoints: {
+        speaking: 5,
+        listening: 5,
+        reading: 4,
+        writing: 4
+      },
+      minExperience: 2
+    }
+  };
+}
+
+ function transformCRSConfig(crsConfig: any) {
+  const agePoints = crsConfig.coreHumanCapital.age.flatMap((item: any) => {
+    const ages = expandAgeLabel(item.label);
+    return ages.map(age => ({
+      age,
+      withSpouse: parseInt(item.values[0]),
+      withoutSpouse: parseInt(item.values[1])
+    }));
+  });
+
+  const educationPoints = crsConfig.coreHumanCapital.education.map((item: any) => ({
+    level: normalizeEducation(item.label),
+    withSpouse: parseInt(item.values[0]),
+    withoutSpouse: parseInt(item.values[1])
+  }));
+  educationPoints.push({ level: "none", withSpouse: 0, withoutSpouse: 0 });
+
+  const spouseEducationPoints = crsConfig.spouseFactors.education.map((item: any) => ({
+    level: normalizeEducation(item.label),
+    points: parseInt(item.values[0])
+  }));
+
+  spouseEducationPoints.push({ level: "none", points: 0 });
+
+  const workExperiencePoints = parseExperiencePoints(
+    crsConfig.coreHumanCapital.canadianExperience,
+    crsConfig.spouseFactors.canadianExperience
+  );
+
+  const transferabilityPoints = parseTransferabilityPoints(crsConfig.skillTransferability);
+  const additionalPoints = parseAdditionalPoints(crsConfig.additionalPoints);
+  const programMinimums = parseProgramMinimums();
+  const languagePoints = generateLanguagePoints(
+    crsConfig.coreHumanCapital.firstLanguage,
+    crsConfig.coreHumanCapital.secondLanguage,
+    crsConfig.spouseFactors.language
+  );
+
+  return {
+    agePoints,
+    educationPoints,
+    spouseEducationPoints,
+    languagePoints,
+    workExperiencePoints,
+    transferabilityPoints,
+    additionalPoints,
+    programMinimums
+  };
+}
+
+(async () => {
+  const { data: html } = await axios.get(url);
+  const $ = cheerio.load(html);
+
+  const findTablesFromDetails = (id: string): cheerio.Cheerio<AnyNode>[] => {
+    const section = $(`#${id}`).nextAll('details').first();
+    const tables: cheerio.Cheerio<AnyNode>[] = [];
+    section.find('table').each((_, table) => {
+      tables.push($(table));
+    });
+    return tables;
+  };
+
+  const coreTables = findTablesFromDetails('core');
+  const coreHumanCapital = {
+    age: extractTableData($, coreTables[0]),
+    education: extractTableData($, coreTables[1]),
+    firstLanguage: extractTableData($, coreTables[2]),
+    secondLanguage: extractTableData($, coreTables[3]),
+    canadianExperience: extractTableData($, coreTables[4]),
+  };
+
+  const spouseTables = findTablesFromDetails('spouse');
+  const spouseFactors = {
+    education: extractTableData($, spouseTables[0]),
+    language: extractTableData($, spouseTables[1]),
+    canadianExperience: extractTableData($, spouseTables[2]),
+  };
+
+  const skillTables = findTablesFromDetails('skill');
+  const skillTransferability = {
+    educationCLB: extractTableData($, skillTables[0]),
+    educationWork: extractTableData($, skillTables[1]),
+    foreignExpCLB: extractTableData($, skillTables[2]),
+    foreignExpWork: extractTableData($, skillTables[3]),
+    certificate: extractTableData($, skillTables[4]),
+  };
+
+  const extraTables = findTablesFromDetails('extra');
+  const additionalPoints = extractTableData($, extraTables[0]);
+
+  const crsConfig = {
+    coreHumanCapital,
+    spouseFactors,
+    skillTransferability,
+    additionalPoints,
+  };
+
+
+})(); 
+
+
+
+  const fetchCRSConfig = async () => {
+    const url = 'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score/crs-criteria.html';
+    const { data: html } = await axios.get(url);
+    const $ = cheerio.load(html);
+  
+    const parsePoints = (str: string) => parseInt(str.replace(/[^0-9]/g, '') || '0', 10);
+  
+    const parseAgePoints = () => {
+      const result: { age: number, withSpouse: number, withoutSpouse: number }[] = [];
+      $('table').each((_, table) => {
+        const headers = $(table).find('thead th');
+        const firstCol = $(headers[0]).text().toLowerCase();
+        if (firstCol.includes('age')) {
+          $(table).find('tbody tr').each((_, tr) => {
+            const cols = $(tr).find('td');
+            if (cols.length === 3) {
+              const label = $(cols[0]).text().trim();
+              const withSpouse = parsePoints($(cols[1]).text());
+              const withoutSpouse = parsePoints($(cols[2]).text());
+  
+              if (/17.*less/i.test(label)) {
+                result.push({ age: 17, withSpouse, withoutSpouse });
+              } else if (/to/.test(label)) {
+                const match = label.match(/(\d+)\s*to\s*(\d+)/);
+                if (match) {
+                  const start = parseInt(match[1]);
+                  const end = parseInt(match[2]);
+                  for (let age = start; age <= end; age++) {
+                    result.push({ age, withSpouse, withoutSpouse });
+                  }
+                }
+              } else if (/45/.test(label)) {
+                result.push({ age: 45, withSpouse, withoutSpouse });
+              } else if (/\d+/.test(label)) {
+                const age = parseInt(label.match(/\d+/)![0]);
+                result.push({ age, withSpouse, withoutSpouse });
+              }
+            }
+          });
+        }
+      });
+      return result;
+    };
+  
+    const parseEducationPoints = () => {
+      const educationMap: Record<string, string> = {
+        'Less than secondary school (high school)': 'less_than_secondary',
+        'Secondary diploma (high school graduation)': 'secondary',
+        'One-year degree, diploma or certificate from \u00a0a university, college, trade or technical school, or other institute': 'one_year_post_secondary',
+        'Two-year program at a university, college, trade or technical school, or other institute': 'two_year_post_secondary',
+        "Bachelor's degree OR\u00a0 a three or more year program at a university, college, trade or technical school, or other institute": 'bachelors',
+        'Two or more certificates, diplomas, or degrees. One must be for a program of three or more years': 'two_or_more_degrees',
+        "Master's degree, OR professional degree needed to practice in a licensed profession": 'masters',
+        'Doctoral level university degree (Ph.D.)': 'doctoral',
+      };
+  
+      const result: { level: string, withSpouse: number, withoutSpouse: number }[] = [];
+      const seen = new Set<string>();
+  
+      $('table').each((_, table) => {
+        const headers = $(table).find('thead th');
+        const firstCol = $(headers[0]).text().toLowerCase();
+        if (firstCol.includes('level of education')) {
+          $(table).find('tbody tr').each((_, tr) => {
+            const cols = $(tr).find('td');
+            if (cols.length === 3) {
+              const label = $(cols[0]).text().trim();
+              const mappedKey = Object.keys(educationMap).find(k => label.startsWith(k));
+              if (mappedKey && !seen.has(mappedKey)) {
+                seen.add(mappedKey);
+                result.push({
+                  level: educationMap[mappedKey],
+                  withSpouse: parsePoints($(cols[1]).text()),
+                  withoutSpouse: parsePoints($(cols[2]).text())
+                });
+              }
+            }
+          });
+        }
+      });
+      return result;
+    };
+  
+    const config = {
+      agePoints: parseAgePoints(),
+      educationPoints: parseEducationPoints(),
+      spouseEducationPoints: [],
+      languagePoints: {
+        firstLanguage: {
+          points: [],
+          pointsWithSpouse: [],
+          spousePoints: [],
+          clbConversion: {},
+        },
+        secondLanguage: {
+          points: [],
+        },
+      },
+      workExperiencePoints: {
+        canadian: [],
+        spouseExperience: [],
+        foreign: [],
+      },
+      transferabilityPoints: {
+        foreignWorkExperience: {
+          clb7: [],
+          clb9: [],
+        },
+        education: {
+          clb7: [],
+          clb9: [],
+        },
+        canadianWorkExperience: {
+          foreignExperience: [],
+          educationCombination: [],
+        },
+      },
+      additionalPoints: {
+        arrangedEmployment: {},
+        frenchLanguage: {},
+        canadianEducation: [],
+        canadianSibling: 0,
+        tradesCertification: 0,
+      },
+      programMinimums: {
+        FSW: {
+          minLanguagePoints: 0,
+          minEducation: 'other',
+          minExperience: 0,
+          minPoints: 0,
+        },
+        CEC: {
+          minLanguagePoints: {},
+          minCanadianExperience: 0,
+        },
+        FST: {
+          minLanguagePoints: {},
+          minExperience: 0,
+        },
+      },
+      cutOffScores: {
+        FSW: 0,
+        CEC: 0,
+        FST: 0,
+        PNP: 0,
+        FLP: 0,
+        General: 0
+      }
+    };
+    console.log(config)
+    return config;
+  };
+
 useEffect(() => {
   console.log("Valor de agregarPareja cambió:", agregarPareja);
   // Puedes poner aquí lógica condicional o actualizaciones relacionadas
@@ -938,6 +1561,8 @@ const checkFSWEligibility = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  
 
   const initialCRSConfig = {
     agePoints: [
@@ -1273,14 +1898,78 @@ const checkFSWEligibility = () => {
     }
   };
 
-  // Load CRS configuration from localStorage on mount
-  useEffect(() => {
-      const loadConfig = async () => {
-          console.log('Data cargada desde el archivo JSON:');
-          setCRSConfig(initialCRSConfig);
-      };
-      loadConfig();
-    }, []);
+  const [newCRSConfig, setNewCRSConfig] = useState<CRSConfig | null>(null);
+
+useEffect(() => {
+  const fetchAndTransformCRSConfig = async () => {
+    const { data: html } = await axios.get(url);
+    const $ = cheerio.load(html);
+
+    const findTablesFromDetails = (id: string): cheerio.Cheerio<AnyNode>[] => {
+      const section = $(`#${id}`).nextAll('details').first();
+      const tables: cheerio.Cheerio<AnyNode>[] = [];
+      section.find('table').each((_, table) => {
+        tables.push($(table));
+      });
+      return tables;
+    };
+
+    const coreTables = findTablesFromDetails('core');
+    const coreHumanCapital = {
+      age: extractTableData($, coreTables[0]),
+      education: extractTableData($, coreTables[1]),
+      firstLanguage: extractTableData($, coreTables[2]),
+      secondLanguage: extractTableData($, coreTables[3]),
+      canadianExperience: extractTableData($, coreTables[4]),
+    };
+
+    const spouseTables = findTablesFromDetails('spouse');
+    const spouseFactors = {
+      education: extractTableData($, spouseTables[0]),
+      language: extractTableData($, spouseTables[1]),
+      canadianExperience: extractTableData($, spouseTables[2]),
+    };
+
+    const skillTables = findTablesFromDetails('skill');
+    const skillTransferability = {
+      educationCLB: extractTableData($, skillTables[0]),
+      educationWork: extractTableData($, skillTables[1]),
+      foreignExpCLB: extractTableData($, skillTables[2]),
+      foreignExpWork: extractTableData($, skillTables[3]),
+      certificate: extractTableData($, skillTables[4]),
+    };
+
+    const extraTables = findTablesFromDetails('extra');
+    const additionalPoints = extractTableData($, extraTables[0]);
+
+    const crsConfig = {
+      coreHumanCapital,
+      spouseFactors,
+      skillTransferability,
+      additionalPoints,
+    };
+
+    const transformedConfig = transformCRSConfig(crsConfig);
+    console.log("Configuración CRS transformada:", transformedConfig);
+    setNewCRSConfig(transformedConfig); // Guarda el resultado en el estado
+  };
+
+  fetchAndTransformCRSConfig();
+}, []);
+
+useEffect(() => {
+  const loadConfig = async () => {
+    if (newCRSConfig) {
+      console.log("Data cargada desde el objeto newCRSConfig:");
+      setCRSConfig(newCRSConfig);
+      console.log("new crs",newCRSConfig);
+    } else {
+      console.error("newCRSConfig no está disponible.");
+    }
+  };
+
+  loadConfig();
+}, [newCRSConfig]);
 
     useEffect(() => {
       const handleScroll = () => {
@@ -1556,6 +2245,25 @@ const checkFSWEligibility = () => {
           skillTransferabilityPoints += eduExpCombination.points;
         }
       }
+
+      // 6. Trades Certification
+      if (profile.tradesCertification) {
+        if(clbLevels.firstLanguage.speaking >= 7 &&
+          clbLevels.firstLanguage.listening >= 7 &&
+          clbLevels.firstLanguage.reading >= 7 &&
+          clbLevels.firstLanguage.writing >= 7){
+          skillTransferabilityPoints += crsConfig.transferabilityPoints.tradesCertification["clb7"];
+          }
+        else if(clbLevels.firstLanguage.speaking >= 5 &&
+          clbLevels.firstLanguage.listening >= 5 &&
+          clbLevels.firstLanguage.reading >= 5 &&
+          clbLevels.firstLanguage.writing >= 5){
+          skillTransferabilityPoints += crsConfig.transferabilityPoints.tradesCertification["clb5"];
+          }
+          else{
+            skillTransferabilityPoints += 0;
+          }
+      }
       
       // Cap transferability points at 100
       skillTransferabilityPoints = Math.min(skillTransferabilityPoints, 100);
@@ -1650,11 +2358,6 @@ const checkFSWEligibility = () => {
       } if (frenchLanguageProficiencyEligible) {
         additionalPoints += crsConfig.additionalPoints.frenchLanguage.nclc7_english_clb4;
         handleChange('frenchAndEnglish', frenchLanguageProficiencyEligible)
-      }
-      
-      // 6. Trades Certification
-      if (profile.tradesCertification) {
-        additionalPoints += crsConfig.additionalPoints.tradesCertification;
       }
       
       // Calculate total CRS score
@@ -1804,7 +2507,7 @@ const checkFSWEligibility = () => {
 
       // Último draw score relevante
       const lastDrawScore = Math.min(
-        ...eligiblePrograms.map(program => crsConfig?.cutOffScores[program] || Infinity)
+        ...eligiblePrograms.map(program => cutOffScores[program] || Infinity)
       );
 
       
@@ -2464,13 +3167,13 @@ const checkFSWEligibility = () => {
                       }}
                     /> */}
 
-                    <Checkbox
+                     <Checkbox
                       label="Certificado de Trade Occupation"
                       checked={profile.tradesCertification}
                       onChange={(e) =>
                         handleChange("tradesCertification", e.target.checked)
                       }
-                    />
+                    /> 
                   </div>
 
                   <div>
@@ -2672,6 +3375,25 @@ const checkFSWEligibility = () => {
                           </span>
                         </p>
                       )}
+                      {/* Trades Certification */}
+                      {profile.tradesCertification && (
+                        <p>
+                          <strong>Trades Certification:</strong>
+                          <span className="float-right">
+                            {clbLevels.firstLanguage.speaking >= 7 &&
+                            clbLevels.firstLanguage.listening >= 7 &&
+                            clbLevels.firstLanguage.reading >= 7 &&
+                            clbLevels.firstLanguage.writing >= 7
+                              ? crsConfig?.transferabilityPoints.tradesCertification.clb7
+                              : clbLevels.firstLanguage.speaking >= 5 &&
+                                clbLevels.firstLanguage.listening >= 5 &&
+                                clbLevels.firstLanguage.reading >= 5 &&
+                                clbLevels.firstLanguage.writing >= 5
+                              ? crsConfig?.transferabilityPoints.tradesCertification.clb5
+                              : 0}
+                          </span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -2754,15 +3476,7 @@ const checkFSWEligibility = () => {
                         </p>
                       )}
 
-                      {/* Trades Certification */}
-                      {profile.tradesCertification && (
-                        <p>
-                          <strong>Trades Certification:</strong>
-                          <span className="float-right">
-                            {crsConfig?.additionalPoints.tradesCertification}
-                          </span>
-                        </p>
-                      )}
+                      
                     </div>
                   </div>
                 </div>
@@ -3116,7 +3830,7 @@ const checkFSWEligibility = () => {
                               {program}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              {(crsConfig?.cutOffScores as any)[program]}
+                              {(cutOffScores as any)[program]}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {results.totalCRSScore}
