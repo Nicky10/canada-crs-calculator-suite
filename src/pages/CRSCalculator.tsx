@@ -1105,7 +1105,7 @@ function parseTransferabilityPoints(skill: any) {
     'Secondary school (high school) credential or less': 'secondary',
     'Post-secondary program credential of one year or longer': 'one_year_post_secondary',
     'Two or more post-secondary program credentials AND at least one of these credentials was issued on completion of a post-secondary program of three years or longer': 'two_or_more_degrees',
-    "A university-level credential at the master's level or at the level of an entry-to-practice professional degree for an occupation listed in the National Occupational Classification matrix at Skill Level A for which licensing by a provincial regulatory body is required": 'masters',
+    "A university-level credential at the master’s level or at the level of an entry-to-practice professional degree for an occupation listed in the National Occupational Classification matrix at Skill Level A for which licensing by a provincial regulatory body is required": 'masters',
     'A university-level credential at the doctoral level': 'doctoral'
   };
 
@@ -1151,6 +1151,8 @@ function parseTransferabilityPoints(skill: any) {
       }));
     })
   };
+
+  console.log('Canadian Work Experience:', canadianWorkExperience)
 
   const tradesCertification = {
     clb5: skill.certificate?.[0]?.values?.[0] ? parseInt(skill.certificate[0].values[0]) : 0,
